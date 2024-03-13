@@ -15,12 +15,58 @@ class SpendeeReport {
     this.worksheet = xlsx.parse(__dirname + '/' +fileName);
     this.outputFileName = outputFileName;
   }
-    buildExcel(data) {
-        var data = this.model();
-        var buffer = xlsx.build([{name: "mySheetName", data: data}]);
-        fs.writeFileSync(__dirname + '/' + this.outputFileName, buffer);
-        return 'Excel file created';
+
+  categoryObj = {
+    'Comida para la casa': [
+      'KROMI',
+      'CHAKAL',
+      'MULTICARNES',
+      'AUTOMERCADO EL PARRAL'
+    ],
+    'Comisiones': [
+      'COMISIONES',
+      'COMI.',
+      'INTERESES',
+      'Comision'
+    ],
+    'Other': [
+      'INTERACTIVE BROKERS',
+      'BANESCO',
+      'PAYONEER'
+    ],
+    'Salud': [
+      'FARMACIA',
+      'MERCANTIL GESTION',
+    ],
+    'Lujos': [
+      'PAGO TDC',
+    ],
+    'Servicios de Internet': [
+      'HEROKU',
+    ]
+  }
+
+  tagsObj = {
+    'Baraki': [
+      'BARAKI'
+    ],
+  }
+
+  buildExcel(data) {
+      var data = this.model();
+      var buffer = xlsx.build([{name: "mySheetName", data: data}]);
+      fs.writeFileSync(__dirname + '/' + this.outputFileName, buffer);
+      return 'Excel file created';
+  }
+  extractEntities(str, list) {
+    for (var key in list) {
+      for (var i = 0; i < list[key].length; i++) {
+        if (str.indexOf(list[key][i]) > -1) {
+          return key;
+        }
+      }
     }
+  }
 }
 
 class MercantilReport extends SpendeeReport {
@@ -57,56 +103,10 @@ class MercantilReport extends SpendeeReport {
     return str;
   }
   formatCategory(str) {
-    var keys = {
-      'Comida para la casa': [
-        'KROMI',
-        'CHAKAL',
-        'MULTICARNES',
-        'AUTOMERCADO EL PARRAL'
-      ],
-      'Comisiones': [
-        'COMISIONES',
-        'COMI.',
-        'INTERESES',
-        'Comision'
-      ],
-      'Other': [
-        'INTERACTIVE BROKERS',
-        'BANESCO',
-        'PAYONEER'
-      ],
-      'Salud': [
-        'FARMACIA',
-        'MERCANTIL GESTION',
-      ],
-      'Lujos': [
-        'PAGO TDC',
-      ],
-      'Servicios de Internet': [
-        'HEROKU',
-      ]
-    }
-    for (var key in keys) {
-      for (var i = 0; i < keys[key].length; i++) {
-        if (str.indexOf(keys[key][i]) > -1) {
-          return key;
-        }
-      }
-    }
+    return this.extractEntities(str, this.categoryObj);
   }
   formatTags(str) {
-    var keys = {
-      'Baraki': [
-        'BARAKI'
-      ],
-    }
-    for (var key in keys) {
-      for (var i = 0; i < keys[key].length; i++) {
-        if (str.indexOf(keys[key][i]) > -1) {
-          return key;
-        }
-      }
-    }
+    return this.extractEntities(str, this.tagsObj);
   }
   formatIncome(str) {
     return str;
@@ -117,9 +117,6 @@ class MercantilReport extends SpendeeReport {
   formatDate(str) {
     var output = moment(str, 'DD/MMM/YYYY', 'es').toISOString();
     return output;
-  }
-  formatNote(str) {
-    return str;
   }
 }
 
