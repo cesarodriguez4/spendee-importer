@@ -23,8 +23,6 @@ class SpendeeReport {
     }
 }
 
-// Mercantil report has this format:
-// Date | Description | Reference | Expense | Income
 class MercantilReport extends SpendeeReport {
   constructor(reportType, fileName, outputFileName) {
     super(reportType, fileName, outputFileName);
@@ -32,7 +30,6 @@ class MercantilReport extends SpendeeReport {
   model() {
     var data = this.worksheet[0].data;
     var formattedData = [];
-    // First row is the header
     var head = [
       'Fecha',
       'Descripción',
@@ -40,7 +37,6 @@ class MercantilReport extends SpendeeReport {
       'Tags',
       'Gasto',
       'Ingreso',
-      'Nota'
     ]
     formattedData.push(head);
     for (var i = 2; i < data.length; i++) {
@@ -52,7 +48,6 @@ class MercantilReport extends SpendeeReport {
             this.formatTags(row[1]),
             this.formatExpense(row[3]),
             this.formatIncome(row[4]),
-            this.formatNote(row[5])
         ]);
     }
     return formattedData;
@@ -78,6 +73,7 @@ class MercantilReport extends SpendeeReport {
       'Other': [
         'INTERACTIVE BROKERS',
         'BANESCO',
+        'PAYONEER'
       ],
       'Salud': [
         'FARMACIA',
@@ -85,6 +81,9 @@ class MercantilReport extends SpendeeReport {
       ],
       'Lujos': [
         'PAGO TDC',
+      ],
+      'Servicios de Internet': [
+        'HEROKU',
       ]
     }
     for (var key in keys) {
