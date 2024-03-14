@@ -6,11 +6,10 @@ var moment = require('moment');
 // Saves an excel file with this format:
 // Name | Tags | Income | Expense | Date | Note
 class SpendeeReport {
-  constructor(reportType, fileName, outputFileName) {
+  constructor(fileName, outputFileName) {
     if (new.target === SpendeeReport) {
       throw new TypeError("Cannot construct Abstract instances directly");
     }
-    this.type = reportType;
     this.fileName = fileName;
     this.worksheet = xlsx.parse(__dirname + '/' +fileName);
     this.outputFileName = outputFileName;
@@ -45,12 +44,15 @@ class SpendeeReport {
       'COMI.',
       'INTERESES',
       'Comision',
+      'TDD',
     ],
     'Other': [
       'INTERACTIVE BROKERS',
       'BANESCO',
       'PAYONEER',
       'COSMIC STORE',
+      'WALDEMAR',
+      'ACH',
     ],
     'Salud': [
       'FARMACIA',
@@ -62,6 +64,7 @@ class SpendeeReport {
     ],
     'Servicios de Internet': [
       'HEROKU',
+      'PAYPAL',
     ],
     'Ropa': [
       'ENGANCHATE',
@@ -82,6 +85,15 @@ class SpendeeReport {
     ],
     'Transferencias Internacionales': [
       'INT ',
+      'WALDEMAR',
+      'ACH',
+    ],
+    'Comisiones': [
+      'COMISIONES',
+      'COMI.',
+      'INTERESES',
+      'Comision',
+      'TDD',
     ],
   }
 
@@ -103,8 +115,8 @@ class SpendeeReport {
 }
 
 class MercantilReport extends SpendeeReport {
-  constructor(reportType, fileName, outputFileName) {
-    super(reportType, fileName, outputFileName);
+  constructor(fileName, outputFileName) {
+    super(fileName, outputFileName);
   }
   model() {
     var data = this.worksheet[0].data;
@@ -153,5 +165,68 @@ class MercantilReport extends SpendeeReport {
   }
 }
 
-var report = new MercantilReport('mercantil', 'mercantil.xlsx', 'mercantil_report.xlsx');
-console.log(report.buildExcel());
+class BanescoReport extends SpendeeReport {
+  constructor(fileName, outputFileName) {
+    super(fileName, outputFileName);
+  }
+  model() {
+    var data = this.worksheet[0].data;
+    var formattedData = [];
+    var head = [
+      'Fecha',
+      'Descripción',
+      'Categoría',
+      'Tags',
+      'Gasto',
+      'Ingreso',
+    ]
+    formattedData.push(head);
+    var prunedData = data.filter(function(e) { return e.length > 0; });
+    for (var i = 8; i < prunedData.length; i++) {
+        var row = prunedData[i];
+        formattedData.push([
+            this.formatDate(row[1]),
+            this.formatName(row[2]),
+            this.formatCategory(row[2]),
+            this.formatTags(row[2]),
+            this.formatExpense(row[3]),
+            this.formatIncome(row[3]),
+        ]);
+    }
+
+    return formattedData;
+  }
+
+  formatName(str) {
+    return str;
+  }
+  formatCategory(str) {
+    return this.extractEntities(str, this.categoryObj) || 'Padres';
+  }
+  formatTags(str) {
+    return this.extractEntities(str, this.tagsObj) || 'Padres';
+  }
+  formatIncome(str) {
+    var income = Number(str.replace(/,/g, ''));
+    if (income < 0) {
+      return null;
+    }
+    return income;
+  }
+  formatExpense(str) {
+    var expense = Number(str.replace(/,/g, ''));
+    if (expense > 0) {
+      return null;
+    }
+    return expense;
+  }
+  formatDate(str) {
+    var output = moment(str, 'DD/MM/YYYY', 'es').toISOString();
+    return output;
+  }
+}
+
+// var reportMercantil = new MercantilReport('mercantil.xlsx', 'mercantil_report.xlsx');
+// console.log(reportMercantil.buildExcel());
+var reportBanesco = new BanescoReport('banesco.xlsx', 'banesco_report.xlsx');
+console.log(reportBanesco.buildExcel());
