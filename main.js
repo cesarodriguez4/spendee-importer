@@ -21,18 +21,36 @@ class SpendeeReport {
       'KROMI',
       'CHAKAL',
       'MULTICARNES',
-      'AUTOMERCADO EL PARRAL'
+      'AUTOMERCADO EL PARRAL',
+      'AWADA',
+      'ALIMENTOS',
+      'BARAKI',
+    ],
+    'Beraca': [
+      'MULTIMAX',
+    ],
+    'Servicios en Venezuela': [
+      'ESTACIONAMIENTO',
+    ],
+    'Comida en la calle': [
+      'SUSHI',
+      'CEBICHES',
+      'PISTAZIE',
+      'TOKYO',
+      'CINES',
+      'PANAD'
     ],
     'Comisiones': [
       'COMISIONES',
       'COMI.',
       'INTERESES',
-      'Comision'
+      'Comision',
     ],
     'Other': [
       'INTERACTIVE BROKERS',
       'BANESCO',
-      'PAYONEER'
+      'PAYONEER',
+      'COSMIC STORE',
     ],
     'Salud': [
       'FARMACIA',
@@ -40,15 +58,30 @@ class SpendeeReport {
     ],
     'Lujos': [
       'PAGO TDC',
+      'AMZN',
     ],
     'Servicios de Internet': [
       'HEROKU',
+    ],
+    'Ropa': [
+      'ENGANCHATE',
+      'GRUPO TOTAL',
+    ],
+    'Travel': [
+      'CAMAGUAN',
+      'APURE',
     ]
   }
 
   tagsObj = {
     'Baraki': [
       'BARAKI'
+    ],
+    'Seguro Medico': [
+      'MERCANTIL GESTION'
+    ],
+    'Transferencias Internacionales': [
+      'INT ',
     ],
   }
 
@@ -103,7 +136,7 @@ class MercantilReport extends SpendeeReport {
     return str;
   }
   formatCategory(str) {
-    return this.extractEntities(str, this.categoryObj);
+    return this.extractEntities(str, this.categoryObj) || 'Sin Asignar';
   }
   formatTags(str) {
     return this.extractEntities(str, this.tagsObj);
