@@ -27,9 +27,11 @@ class SpendeeReport {
     ],
     'Beraca': [
       'MULTIMAX',
+      'FERREJNIOR',
     ],
     'Servicios en Venezuela': [
       'ESTACIONAMIENTO',
+      'GANDALF',
     ],
     'Comida en la calle': [
       'SUSHI',
@@ -80,13 +82,27 @@ class SpendeeReport {
     'Baraki': [
       'BARAKI'
     ],
+    'Ferreteria': [
+      'FERREJNIOR',
+    ],
     'Seguro Medico': [
       'MERCANTIL GESTION'
+    ],
+    'Mercado': [
+      'KROMI',
+      'CHAKAL',
+      'AUTOMERCADO EL PARRAL',
+    ],
+    'Carnes': [
+      'MULTICARNES',
     ],
     'Transferencias Internacionales': [
       'INT ',
       'WALDEMAR',
       'ACH',
+    ],
+    'Cambio de efectivo': [
+      'COSMIC STORE',
     ],
     'Comisiones': [
       'COMISIONES',
@@ -226,7 +242,7 @@ class BanescoReport extends SpendeeReport {
   }
 }
 
-// var reportMercantil = new MercantilReport('mercantil.xlsx', 'mercantil_report.xlsx');
-// console.log(reportMercantil.buildExcel());
+var reportMercantil = new MercantilReport('mercantil.xlsx', 'mercantil_report.xlsx');
+console.log(reportMercantil.buildExcel());
 var reportBanesco = new BanescoReport('banesco.xlsx', 'banesco_report.xlsx');
 console.log(reportBanesco.buildExcel());
