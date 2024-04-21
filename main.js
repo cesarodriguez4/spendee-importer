@@ -111,6 +111,14 @@ class SpendeeReport {
       'Comision',
       'TDD',
     ],
+    'Comida Padres': [
+      'SHOPENG',
+      'MINI MERCADO',
+    ],
+    'Servicios de internet': [
+      'PAYPAL',
+      'GANDALF',
+    ],
   }
 
   buildExcel(data) {
