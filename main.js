@@ -32,6 +32,7 @@ class SpendeeReport {
     'Servicios en Venezuela': [
       'ESTACIONAMIENTO',
       'GANDALF',
+      'DLOSTARLINK',
     ],
     'Comida en la calle': [
       'SUSHI',
@@ -47,6 +48,7 @@ class SpendeeReport {
       'INTERESES',
       'Comision',
       'TDD',
+      'ITBMS',
     ],
     'Other': [
       'INTERACTIVE BROKERS',
@@ -64,9 +66,16 @@ class SpendeeReport {
       'PAGO TDC',
       'AMZN',
     ],
+    'Transferencias': [
+      'INT ',
+      'WALDEMAR',
+      'ACH',
+      'COSMIC',
+    ],
     'Servicios de Internet': [
       'HEROKU',
       'PAYPAL',
+      'OPENAI',
     ],
     'Ropa': [
       'ENGANCHATE',
@@ -75,6 +84,9 @@ class SpendeeReport {
     'Travel': [
       'CAMAGUAN',
       'APURE',
+    ],
+    'Meriva': [
+      'ERASMO'
     ]
   }
 
@@ -110,14 +122,20 @@ class SpendeeReport {
       'INTERESES',
       'Comision',
       'TDD',
+      'ITBMS',
     ],
     'Comida Padres': [
       'SHOPENG',
       'MINI MERCADO',
+      'PAN PAST Y CHARCT B',
+      'MERCATENERIFE',
+      'INVERSIONES TABACO',
+      'EL CHACAL NAGANAGA',
     ],
     'Servicios de internet': [
       'PAYPAL',
       'GANDALF',
+      'DLOSTARLINK',
     ],
   }
 
