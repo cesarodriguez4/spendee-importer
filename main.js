@@ -248,15 +248,19 @@ class BanescoReport extends SpendeeReport {
   formatTags(str) {
     return this.extractEntities(str, this.tagsObj) || 'Padres';
   }
-  formatIncome(str) {
-    var income = Number(str.replace(/,/g, ''));
+  formatIncome(income) {
+    if (typeof expense === 'string') {
+      income = Number(str.replace(/,/g, ''));
+    }
     if (income < 0) {
       return null;
     }
     return income;
   }
-  formatExpense(str) {
-    var expense = Number(str.replace(/,/g, ''));
+  formatExpense(expense) {
+    if (typeof expense === 'string') {
+      expense = Number(str.replace(/,/g, ''));
+    }
     if (expense > 0) {
       return null;
     }
