@@ -7,7 +7,7 @@ class SpendeeReport {
         throw new TypeError("Cannot construct Abstract instances directly");
       }
       this.fileName = fileName;
-      this.worksheet = xlsx.parse(__dirname + "/../" + '/' +fileName);
+      this.worksheet = xlsx.parse(__dirname + "/.." + '/' +fileName);
       this.outputFileName = outputFileName;
     }
 
@@ -138,7 +138,7 @@ class SpendeeReport {
     buildExcel(data) {
         var data = this.model();
         var buffer = xlsx.build([{name: "mySheetName", data: data}]);
-        fs.writeFileSync(__dirname + '/' + this.outputFileName, buffer);
+        fs.writeFileSync(__dirname + '/..' +  '/' + this.outputFileName, buffer);
         return 'Excel file created';
     }
     extractEntities(str, list) {
