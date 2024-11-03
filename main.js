@@ -249,8 +249,8 @@ class BanescoReport extends SpendeeReport {
     return this.extractEntities(str, this.tagsObj) || 'Padres';
   }
   formatIncome(income) {
-    if (typeof expense === 'string') {
-      income = Number(str.replace(/,/g, ''));
+    if (typeof income === 'string') {
+      income = Number(income.replace(/,/g, ''));
     }
     if (income < 0) {
       return null;
@@ -259,7 +259,7 @@ class BanescoReport extends SpendeeReport {
   }
   formatExpense(expense) {
     if (typeof expense === 'string') {
-      expense = Number(str.replace(/,/g, ''));
+      expense = Number(expense.replace(/,/g, ''));
     }
     if (expense > 0) {
       return null;
