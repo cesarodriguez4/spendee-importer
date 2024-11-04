@@ -40,7 +40,7 @@ class BanescoVEReport extends SpendeeReport {
       return str;
     }
     formatCategory(str) {
-      return this.extractEntities(str, this.categoryObj);
+      return this.extractEntities(str, this.categoryObj) || 'Sin Asignar';
     }
     formatTags(str) {
       return this.extractEntities(str, this.tagsObj);
@@ -64,7 +64,7 @@ class BanescoVEReport extends SpendeeReport {
       return this.convertToUSD(expense);
     }
     formatDate(str) {
-      var output = moment(str, 'DD/MM/YYYY', 'es').toISOString();
+      var output = moment(str, 'YYYY/MM/DD', 'es').toISOString();
       return output;
     }
   }
