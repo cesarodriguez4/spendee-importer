@@ -2,13 +2,15 @@ var xlsx = require('node-xlsx');
 var fs = require('fs');
 
 class SpendeeReport {
-    constructor(fileName, outputFileName) {
+    constructor(fileName, outputFileName, withBS) {
       if (new.target === SpendeeReport) {
         throw new TypeError("Cannot construct Abstract instances directly");
       }
       this.fileName = fileName;
       this.worksheet = xlsx.parse(__dirname + "/.." + '/' +fileName);
       this.outputFileName = outputFileName;
+      // Exchange rate from Bs to USD
+      this.withBS = Number(withBS);
     }
 
     categoryObj = {
@@ -20,6 +22,7 @@ class SpendeeReport {
         'AWADA',
         'ALIMENTOS',
         'BARAKI',
+        'MAXICARNE',
       ],
       'Beraca': [
         'MULTIMAX',
@@ -29,6 +32,7 @@ class SpendeeReport {
         'ESTACIONAMIENTO',
         'GANDALF',
         'DLOSTARLINK',
+        'MOVISTAR',
       ],
       'Comida en la calle': [
         'SUSHI',
@@ -45,6 +49,8 @@ class SpendeeReport {
         'Comision',
         'TDD',
         'ITBMS',
+        'COM.',
+        'EMISION',
       ],
       'Other': [
         'INTERACTIVE BROKERS',
@@ -57,6 +63,7 @@ class SpendeeReport {
       'Salud': [
         'FARMACIA',
         'MERCANTIL GESTION',
+        'UNIVERSITAS',
       ],
       'Lujos': [
         'PAGO TDC',
@@ -89,6 +96,12 @@ class SpendeeReport {
     tagsObj = {
       'Baraki': [
         'BARAKI'
+      ],
+      'Pago movil': [
+        'Banesco Pago Movil',
+      ],
+      'Punto de venta': [
+        'POS',
       ],
       'Ferreteria': [
         'FERREJNIOR',
@@ -139,7 +152,7 @@ class SpendeeReport {
         var data = this.model();
         var buffer = xlsx.build([{name: "mySheetName", data: data}]);
         fs.writeFileSync(__dirname + '/..' +  '/' + this.outputFileName, buffer);
-        return 'Excel file created';
+        return 'Excel file created for ' + this.fileName;
     }
     extractEntities(str, list) {
       for (var key in list) {
@@ -150,6 +163,10 @@ class SpendeeReport {
         }
       }
     }
+    convertToUSD(amount) {
+      return Number(amount) / this.withBS;
+    }
+
   }
 
 module.exports = {
