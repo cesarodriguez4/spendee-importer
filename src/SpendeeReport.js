@@ -33,6 +33,7 @@ class SpendeeReport {
         'GANDALF',
         'DLOSTARLINK',
         'MOVISTAR',
+        'DIGITEL',
       ],
       'Comida en la calle': [
         'SUSHI',
@@ -46,6 +47,7 @@ class SpendeeReport {
         'COMISIONES',
         'COMI.',
         'INTERESES',
+        'ANUALIDAD',
         'Comision',
         'TDD',
         'ITBMS',
@@ -74,6 +76,9 @@ class SpendeeReport {
         'WALDEMAR',
         'ACH',
         'COSMIC',
+        'TRF.MB',
+        'TRF',
+        'TRANS.CTAS. A TERCEROS BANESCO',
       ],
       'Servicios de Internet': [
         'HEROKU',
@@ -122,6 +127,9 @@ class SpendeeReport {
         'WALDEMAR',
         'ACH',
       ],
+      'Retiro de Binance': [
+        'TRANS.CTAS. A TERCEROS BANESCO',
+      ],
       'Cambio de efectivo': [
         'COSMIC STORE',
       ],
@@ -155,6 +163,9 @@ class SpendeeReport {
         return 'Excel file created for ' + this.fileName;
     }
     extractEntities(str, list) {
+      if (!str) {
+        return null;
+      }
       for (var key in list) {
         for (var i = 0; i < list[key].length; i++) {
           if (str.indexOf(list[key][i]) > -1) {
