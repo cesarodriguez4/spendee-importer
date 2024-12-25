@@ -60,7 +60,8 @@ class BinanceReport extends SpendeeReport {
         return null;
     }
     formatDate(str) {
-      var output = moment(str, 'DD/MMM/YYYY', 'es').toISOString();
+      var output = moment(str, 'YYYY-MM-DD HH:mm:ss')
+      .toISOString();
       return output;
     }
 }

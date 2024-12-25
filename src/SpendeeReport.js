@@ -78,6 +78,8 @@ class SpendeeReport {
         'COSMIC',
         'TRF.MB',
         'TRF',
+        'PAYONEER',
+        'INTERNA',
         'TRANS.CTAS. A TERCEROS BANESCO',
       ],
       'Servicios de Internet': [
@@ -95,7 +97,10 @@ class SpendeeReport {
       ],
       'Meriva': [
         'ERASMO'
-      ]
+      ],
+      'P2P': [
+        'P2P',
+      ],
     }
 
     tagsObj = {
