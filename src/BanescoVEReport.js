@@ -25,7 +25,7 @@ class BanescoVEReport extends SpendeeReport {
           var row = prunedData[i];
           formattedData.push([
               this.formatDate(row[0]),
-              this.formatName(row[2]),
+              this.formatName(row[2]) + ' Bs. ' + row[3],
               this.formatCategory(row[2]),
               this.formatTags(row[2]),
               this.formatExpense(row[3]),
