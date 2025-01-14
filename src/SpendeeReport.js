@@ -163,8 +163,8 @@ class SpendeeReport {
 
     buildExcel(data) {
         var data = this.model();
-        var buffer = xlsx.build([{name: "mySheetName", data: data}]);
-        fs.writeFileSync(__dirname + '/..' +  '/' + this.outputFileName, buffer);
+        var buffer = xlsx.build([{name: "mySheetName", data}]);
+        fs.writeFileSync(__dirname + '/..' +  '/exports/' + this.outputFileName, buffer);
         return 'Excel file created for ' + this.fileName;
     }
     extractEntities(str, list) {

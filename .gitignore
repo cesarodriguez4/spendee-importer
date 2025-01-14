@@ -3,3 +3,4 @@
 *.xls
 *.csv
 .DS_Store
+exports/

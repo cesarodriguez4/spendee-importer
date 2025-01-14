@@ -2,6 +2,7 @@ const { MercantilReport } = require('./src/MercantilReport');
 const { BanescoReport } = require('./src/BanescoReport');
 const { BanescoVEReport } = require('./src/BanescoVEReport');
 const { BinanceReport } = require('./src/BinanceReport');
+const { ExodusReport } = require('./src/ExodusReport');
 
 
 // Saves an excel file with this format:
@@ -15,3 +16,5 @@ var reportBanescoVE = new BanescoVEReport('banescove.xls', 'banescoVE_report.xls
 console.log(reportBanescoVE.buildExcel());
 var reportBinance = new BinanceReport('binance.csv', 'binance_report.xlsx');
 console.log(reportBinance.buildExcel());
+var reportExodus = new ExodusReport('exodus.csv', '2018-12-31', '2025-01-12');
+console.log(reportExodus.exportFilesToExcel());
