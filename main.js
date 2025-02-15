@@ -12,9 +12,9 @@ var reportMercantil = new MercantilReport('mercantil.xlsx', 'mercantil_report.xl
 console.log(reportMercantil.buildExcel());
 var reportBanesco = new BanescoReport('banesco.xls', 'banesco_report.xlsx');
 console.log(reportBanesco.buildExcel());
-var reportBanescoVE = new BanescoVEReport('banescove.xls', 'banescoVE_report.xlsx', 65);
+var reportBanescoVE = new BanescoVEReport('banescove.xls', 'banescoVE_report.xlsx', 72);
 console.log(reportBanescoVE.buildExcel());
 var reportBinance = new BinanceReport('binance.csv', 'binance_report.xlsx');
 console.log(reportBinance.buildExcel());
-var reportExodus = new ExodusReport('exodus.csv', '2018-12-31', '2025-01-12');
+var reportExodus = new ExodusReport('exodus.csv', '2025-01-24', '2025-02-01');
 console.log(reportExodus.exportFilesToExcel());

@@ -180,7 +180,8 @@ class SpendeeReport {
       }
     }
     convertToUSD(amount) {
-      return Number(amount) / this.withBS;
+      // return Number(amount) / this.withBS;
+      return Number(amount);
     }
 
   }

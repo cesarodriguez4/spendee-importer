@@ -4,6 +4,7 @@ var moment = require('moment');
 class BanescoVEReport extends SpendeeReport {
     constructor(fileName, outputFileName, withBS) {
       super(fileName, outputFileName, withBS);
+      this.withBS = withBS;
       if (!withBS) {
         throw new Error('Please provide the exchange rate from Bs to USD');
       }
@@ -23,9 +24,10 @@ class BanescoVEReport extends SpendeeReport {
       var prunedData = data.filter(function(e) { return e.length > 0; });
       for (var i = 1; i < prunedData.length; i++) {
           var row = prunedData[i];
+          const convertedPrice = Number(row[3].replace(/\./g, '').replace(/,/g, '.')).toFixed(2) / this.withBS;
           formattedData.push([
               this.formatDate(row[0]),
-              this.formatName(row[2]) + ' Bs. ' + row[3],
+              this.formatName(row[2]) + ' $ ' + `${convertedPrice.toFixed(2)}`,
               this.formatCategory(row[2]),
               this.formatTags(row[2]),
               this.formatExpense(row[3]),
