@@ -1,0 +1,89 @@
+{
+  "Comida para la casa": [
+    "KROMI",
+    "CHAKAL",
+    "MULTICARNES",
+    "AUTOMERCADO EL PARRAL",
+    "AWADA",
+    "ALIMENTOS",
+    "BARAKI",
+    "MAXICARNE"
+  ],
+  "Beraca": [
+    "MULTIMAX",
+    "FERREJNIOR"
+  ],
+  "Servicios en Venezuela": [
+    "ESTACIONAMIENTO",
+    "GANDALF",
+    "DLOSTARLINK",
+    "MOVISTAR",
+    "DIGITEL"
+  ],
+  "Comida en la calle": [
+    "SUSHI",
+    "CEBICHES",
+    "PISTAZIE",
+    "TOKYO",
+    "CINES",
+    "PANAD"
+  ],
+  "Comisiones": [
+    "COMISIONES",
+    "COMI.",
+    "INTERESES",
+    "ANUALIDAD",
+    "Comision",
+    "TDD",
+    "ITBMS",
+    "COM.",
+    "EMISION"
+  ],
+  "Other": [
+    "INTERACTIVE BROKERS",
+    "BANESCO",
+    "PAYONEER",
+    "COSMIC STORE",
+    "WALDEMAR",
+    "ACH"
+  ],
+  "Salud": [
+    "FARMACIA",
+    "MERCANTIL GESTION",
+    "UNIVERSITAS"
+  ],
+  "Lujos": [
+    "PAGO TDC",
+    "AMZN"
+  ],
+  "Transferencias": [
+    "INT ",
+    "WALDEMAR",
+    "ACH",
+    "COSMIC",
+    "TRF.MB",
+    "TRF",
+    "PAYONEER",
+    "INTERNA",
+    "TRANS.CTAS. A TERCEROS BANESCO"
+  ],
+  "Servicios de Internet": [
+    "HEROKU",
+    "PAYPAL",
+    "OPENAI"
+  ],
+  "Ropa": [
+    "ENGANCHATE",
+    "GRUPO TOTAL"
+  ],
+  "Travel": [
+    "CAMAGUAN",
+    "APURE"
+  ],
+  "Meriva": [
+    "ERASMO"
+  ],
+  "P2P": [
+    "P2P"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "Baraki": [
+    "BARAKI"
+  ],
+  "Pago movil": [
+    "Banesco Pago Movil"
+  ],
+  "Punto de venta": [
+    "POS"
+  ],
+  "Ferreteria": [
+    "FERREJNIOR"
+  ],
+  "Seguro Medico": [
+    "MERCANTIL GESTION"
+  ],
+  "Mercado": [
+    "KROMI",
+    "CHAKAL",
+    "AUTOMERCADO EL PARRAL"
+  ],
+  "Carnes": [
+    "MULTICARNES"
+  ],
+  "Transferencias Internacionales": [
+    "INT ",
+    "WALDEMAR",
+    "ACH"
+  ],
+  "Retiro de Binance": [
+    "TRANS.CTAS. A TERCEROS BANESCO"
+  ],
+  "Cambio de efectivo": [
+    "COSMIC STORE"
+  ],
+  "Comisiones": [
+    "COMISIONES",
+    "COMI.",
+    "INTERESES",
+    "Comision",
+    "TDD",
+    "ITBMS"
+  ],
+  "Comida Padres": [
+    "SHOPENG",
+    "MINI MERCADO",
+    "PAN PAST Y CHARCT B",
+    "MERCATENERIFE",
+    "INVERSIONES TABACO",
+    "EL CHACAL NAGANAGA"
+  ],
+  "Servicios de internet": [
+    "PAYPAL",
+    "GANDALF",
+    "DLOSTARLINK"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "mercantil": {
+    "headerRows": 2,
+    "dateFormat": "DD/MMM/YYYY",
+    "locale": "es",
+    "columns": { "date": 0, "name": 1, "expense": 3, "income": 4 },
+    "categoryFallback": "Sin Asignar"
+  },
+  "banesco": {
+    "headerRows": 8,
+    "dateFormat": "DD/MM/YYYY",
+    "locale": "es",
+    "columns": { "date": 1, "name": 2, "amount": 3 },
+    "categoryFallback": "Padres",
+    "tagFallback": "Padres"
+  },
+  "banescoVE": {
+    "headerRows": 1,
+    "dateFormat": "YYYY/MM/DD",
+    "locale": "es",
+    "columns": { "date": 0, "name": 2, "amount": 3 },
+    "categoryFallback": "Sin Asignar"
+  },
+  "binance": {
+    "headerRows": 1,
+    "dateFormat": "YY-MM-DD HH:mm:ss",
+    "columns": { "date": 1, "account": 2, "operation": 3, "coin": 4, "amount": 5, "remark": 6 },
+    "excludeAccounts": [],
+    "excludeOperations": [
+      "Transfer Between Main and Funding Wallet",
+      "Transfer Funds to Spot",
+      "Binance Convert",
+      "Deposit"
+    ],
+    "allowedCoins": ["USDT"],
+    "categoryFallback": "Sin Asignar"
+  },
+  "exodus": {
+    "dateFormat": "YYYY-MM-DD HH:mm:ss",
+    "columns": {
+      "date": 0,
+      "walletA": 2,
+      "walletB": 3,
+      "outAmount": 4,
+      "currencyA": 5,
+      "transactionUrlA": 10,
+      "inAmount": 11,
+      "currencyB": 12,
+      "transactionUrlB": 14,
+      "personalNote": 16
+    },
+    "wallets": [
+      { "currency": "USDT", "wallet": "exodus_0", "outputPath": "exodusUSDT_report.xlsx" },
+      { "currency": "USDC", "wallet": "exodus_0", "outputPath": "exodusUSDC_report.xlsx" },
+      { "currency": "BTC", "wallet": "trezor_0_067f5db394a2374e33db8ea4014fdf37", "outputPath": "trezorBTC_report.xlsx" },
+      { "currency": "ETH", "wallet": "trezor_0_067f5db394a2374e33db8ea4014fdf37", "outputPath": "trezorETH_report.xlsx" }
+    ]
+  }
+}
