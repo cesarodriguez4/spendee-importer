@@ -8,10 +8,14 @@ class ExcelWriter {
   }
 
   write(fileName, rows, sheetName = 'mySheetName') {
-    const buffer = xlsx.build([{ name: sheetName, data: rows }]);
+    const buffer = ExcelWriter.buildBuffer(rows, sheetName);
     const fullPath = path.join(this.outputDir, fileName);
     fs.writeFileSync(fullPath, buffer);
     return fullPath;
+  }
+
+  static buildBuffer(rows, sheetName = 'mySheetName') {
+    return xlsx.build([{ name: sheetName, data: rows }]);
   }
 }
 

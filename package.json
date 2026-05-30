@@ -5,12 +5,15 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "ui": "node ui/server.js",
     "test": "vitest run"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "dayjs": "^1.11.20",
+    "express": "^4.21.2",
+    "multer": "^2.1.1",
     "node-xlsx": "^0.23.0"
   },
   "devDependencies": {

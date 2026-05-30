@@ -11,6 +11,10 @@ class FileReader {
     const sheets = xlsx.parse(fullPath);
     return sheets[0].data;
   }
+
+  readBuffer(buffer) {
+    return xlsx.parse(buffer)[0].data;
+  }
 }
 
 module.exports = { FileReader };

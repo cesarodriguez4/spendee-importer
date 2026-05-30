@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spendee Importer</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main>
+    <h1>Spendee Importer</h1>
+    <p class="subtitle">Convierte exports de bancos/exchanges a XLSX importable en Wallet by BudgetBakers.</p>
+
+    <section class="card">
+      <div class="row">
+        <label>
+          Fuente
+          <select id="source"></select>
+        </label>
+
+        <div id="dropzone" class="dropzone">
+          <p><strong>Arrastra el archivo aquí</strong> o haz click</p>
+          <p id="file-name" class="muted">Ningún archivo seleccionado</p>
+          <input type="file" id="file" hidden />
+        </div>
+      </div>
+
+      <div id="options" class="options"></div>
+
+      <div class="actions">
+        <button id="process" type="button">Procesar</button>
+        <span id="status" class="status"></span>
+      </div>
+    </section>
+
+    <section id="preview-section" class="card hidden">
+      <div class="preview-header">
+        <h2>Preview <span id="row-count" class="muted"></span></h2>
+        <div>
+          <input type="text" id="output-name" placeholder="output.xlsx" />
+          <button id="download" type="button">Descargar XLSX</button>
+        </div>
+      </div>
+      <p class="muted small">Las columnas <em>Categoría</em> y <em>Tags</em> son editables. Tus cambios se incluyen en la descarga.</p>
+      <div class="table-wrap">
+        <table id="preview">
+          <thead>
+            <tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Tags</th><th>Gasto</th><th>Ingreso</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
