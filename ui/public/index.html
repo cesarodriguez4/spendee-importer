@@ -17,6 +17,14 @@
           <select id="source"></select>
         </label>
 
+        <label>
+          Formato de exportación
+          <select id="format">
+            <option value="wallet">Wallet (BudgetBakers)</option>
+            <option value="spendee">Spendee</option>
+          </select>
+        </label>
+
         <div id="dropzone" class="dropzone">
           <p><strong>Arrastra el archivo aquí</strong> o haz click</p>
           <p id="file-name" class="muted">Ningún archivo seleccionado</p>
@@ -48,6 +56,31 @@
           </thead>
           <tbody></tbody>
         </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="preview-header">
+        <h2>Importar todos los bancos</h2>
+      </div>
+      <p class="muted small">Agrega varias fuentes con su archivo y descarga un XLSX por cada banco de una sola vez.</p>
+
+      <div class="row">
+        <label>
+          Formato de exportación
+          <select id="batch-format">
+            <option value="wallet">Wallet (BudgetBakers)</option>
+            <option value="spendee">Spendee</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="batch-list" class="batch-list"></div>
+
+      <div class="actions">
+        <button id="batch-add" type="button" class="secondary">Agregar banco</button>
+        <button id="batch-run" type="button">Procesar y descargar todo</button>
+        <span id="batch-status" class="status"></span>
       </div>
     </section>
   </main>

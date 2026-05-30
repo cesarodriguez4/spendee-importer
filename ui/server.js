@@ -31,14 +31,17 @@ app.post('/api/preview', upload.single('file'), (req, res) => {
 
 app.post('/api/export', (req, res) => {
   try {
-    const { rows, fileName = 'report.xlsx' } = req.body;
+    const { rows, fileName = 'report.xlsx', format } = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'rows must be an array' });
-    const isSpendee = rows.some((r) => r.payee !== undefined || r.currency !== undefined);
-    const headers = isSpendee ? Row.spendeeHeaders() : Row.headers();
+    // Tanto "wallet" como "spendee" exportan con Monto único + Payee + Currency
+    const withPayee = format
+      ? (format === 'spendee' || format === 'wallet')
+      : rows.some((r) => r.payee != null || r.currency != null);
+    const headers = withPayee ? Row.spendeeHeaders() : Row.headers();
     const data = [
       headers,
       ...rows.map((r) => {
-        if (isSpendee) {
+        if (withPayee) {
           const amount = r.income != null && r.income !== '' ? Number(r.income) : Number(r.expense);
           return [r.date, r.name, r.category, r.tags, amount, r.payee ?? '', r.currency ?? ''];
         }

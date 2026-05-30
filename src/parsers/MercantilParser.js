@@ -17,6 +17,8 @@ class MercantilParser {
         name,
         category: categorizer.categorize(name, categoryFallback),
         tags: categorizer.tag(name),
+        payee: categorizer.payee(name),
+        currency: 'USD',
         expense: raw[columns.expense],
         income: raw[columns.income],
       }));

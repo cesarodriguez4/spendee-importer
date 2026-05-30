@@ -8,6 +8,10 @@ const categories = {
 const tags = {
   Mercado: ['KROMI'],
 };
+const payees = {
+  'Supermercado Kromi': ['KROMI'],
+  'Banco ACH': ['ACH'],
+};
 
 describe('Categorizer', () => {
   const categorizer = new Categorizer(categories, tags);
@@ -35,5 +39,20 @@ describe('Categorizer', () => {
   it('returns null fallback when description is empty', () => {
     expect(categorizer.categorize('', 'Sin Asignar')).toBe('Sin Asignar');
     expect(categorizer.categorize(null, 'Sin Asignar')).toBe('Sin Asignar');
+  });
+
+  it('assigns a payee from the payees map', () => {
+    const withPayees = new Categorizer(categories, tags, payees);
+    expect(withPayees.payee('Compra en KROMI sucursal 5')).toBe('Supermercado Kromi');
+    expect(withPayees.payee('ACH a Juan')).toBe('Banco ACH');
+  });
+
+  it('returns null payee when no match and no payees configured', () => {
+    expect(categorizer.payee('Algo no mapeado')).toBeNull();
+  });
+
+  it('returns the payee fallback when no match', () => {
+    const withPayees = new Categorizer(categories, tags, payees);
+    expect(withPayees.payee('Sin coincidencia', 'Desconocido')).toBe('Desconocido');
   });
 });

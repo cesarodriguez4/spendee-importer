@@ -21,6 +21,8 @@ class BanescoParser {
         name,
         category: categorizer.categorize(name, categoryFallback),
         tags: categorizer.tag(name, tagFallback),
+        payee: categorizer.payee(name),
+        currency: 'USD',
         expense,
         income,
       }));

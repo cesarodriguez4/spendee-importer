@@ -10,6 +10,11 @@ describe('BanescoVEParser', () => {
     expect(() => new BanescoVEParser(sources.banescoVE)).toThrow(/exchange rate/i);
   });
 
+  it('throws if the exchange rate is zero or negative', () => {
+    expect(() => new BanescoVEParser(sources.banescoVE, 0)).toThrow(/exchange rate/i);
+    expect(() => new BanescoVEParser(sources.banescoVE, -650)).toThrow(/exchange rate/i);
+  });
+
   it('converts Bs amounts to USD using the exchange rate', () => {
     const parser = new BanescoVEParser(sources.banescoVE, 650);
     const raw = [

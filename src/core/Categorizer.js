@@ -1,7 +1,8 @@
 class Categorizer {
-  constructor(categoriesMap, tagsMap) {
+  constructor(categoriesMap, tagsMap, payeesMap = {}) {
     this.categoriesMap = categoriesMap;
     this.tagsMap = tagsMap;
+    this.payeesMap = payeesMap;
   }
 
   categorize(description, fallback = 'Sin Asignar') {
@@ -10,6 +11,10 @@ class Categorizer {
 
   tag(description, fallback = null) {
     return this.#match(description, this.tagsMap) ?? fallback;
+  }
+
+  payee(description, fallback = null) {
+    return this.#match(description, this.payeesMap) ?? fallback;
   }
 
   #match(str, map) {

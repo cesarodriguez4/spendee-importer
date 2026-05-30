@@ -1,6 +1,7 @@
 const sources = require('../config/sources.json');
 const categories = require('../config/categories.json');
 const tags = require('../config/tags.json');
+const payees = require('../config/payees.json');
 
 const { Categorizer } = require('../core/Categorizer');
 const { FileReader } = require('../core/FileReader');
@@ -13,16 +14,16 @@ const { BinanceParser } = require('../parsers/BinanceParser');
 const { ExodusParser } = require('../parsers/ExodusParser');
 const { SpendeeParser } = require('../parsers/SpendeeParser');
 
-const categorizer = new Categorizer(categories, tags);
+const categorizer = new Categorizer(categories, tags, payees);
 const xlsReader = new FileReader();
 const csvReader = new CsvReader();
 
 const SOURCES_META = [
-  { id: 'mercantil', label: 'Mercantil (Venezuela)', accept: '.xlsx,.xls', options: [] },
+  { id: 'mercantil', label: 'Mercantil (Panama)', accept: '.xlsx,.xls', options: [] },
   { id: 'banesco',   label: 'Banesco Panamá',       accept: '.xls,.xlsx', options: [] },
   {
     id: 'banescoVE', label: 'Banesco Venezuela',    accept: '.xls,.xlsx',
-    options: [{ name: 'exchangeRate', label: 'Tasa de cambio (Bs/USD)', type: 'number', required: true, default: 650 }],
+    options: [{ name: 'exchangeRate', label: 'Tasa de cambio (Bs/USD) — montos se exportan en USD', type: 'number', required: true, default: 650 }],
   },
   { id: 'binance',   label: 'Binance',              accept: '.csv,.xlsx', options: [] },
   {
@@ -64,7 +65,7 @@ function getRows({ buffer, source, fileName = '', options = {} }) {
   const parser = entry.build(options);
   if (source === 'spendee') {
     const rows = readSpendeeRows(buffer, fileName);
-    return parser.parse(rows);
+    return parser.parse(rows, categorizer);
   }
   const raw = entry.reader.readBuffer(buffer);
   return parser.parse(raw, categorizer);

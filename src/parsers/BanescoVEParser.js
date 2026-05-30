@@ -4,11 +4,12 @@ const { parseEUAmount, splitIncomeExpense } = require('../core/amountParser');
 
 class BanescoVEParser {
   constructor(schema, exchangeRate) {
-    if (!exchangeRate) {
-      throw new Error('BanescoVEParser requires an exchange rate (Bs → USD)');
+    const rate = Number(exchangeRate);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      throw new Error('BanescoVEParser requires a positive exchange rate (Bs → USD)');
     }
     this.schema = schema;
-    this.exchangeRate = Number(exchangeRate);
+    this.exchangeRate = rate;
   }
 
   parse(rawData, categorizer) {
@@ -27,6 +28,8 @@ class BanescoVEParser {
         name: displayName,
         category: categorizer.categorize(baseName, categoryFallback),
         tags: categorizer.tag(baseName),
+        payee: categorizer.payee(baseName),
+        currency: 'USD',
         expense,
         income,
       }));
