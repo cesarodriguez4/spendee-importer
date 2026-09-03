@@ -35,6 +35,14 @@
     "allowedCoins": ["USDT"],
     "categoryFallback": "Sin Asignar"
   },
+  "payoneer": {
+    "headerRows": 1,
+    "dateFormat": "DD MMM, YYYY",
+    "locale": "en",
+    "columns": { "date": 0, "name": 1, "amount": 2, "currency": 3, "status": 4 },
+    "includeStatuses": ["Completed"],
+    "categoryFallback": "Sin Asignar"
+  },
   "exodus": {
     "dateFormat": "YYYY-MM-DD HH:mm:ss",
     "columns": {

@@ -7,6 +7,7 @@ const { MercantilParser } = require('./src/parsers/MercantilParser');
 const { BanescoParser } = require('./src/parsers/BanescoParser');
 const { BanescoVEParser } = require('./src/parsers/BanescoVEParser');
 const { BinanceParser } = require('./src/parsers/BinanceParser');
+const { PayoneerParser } = require('./src/parsers/PayoneerParser');
 // const { ExodusParser } = require('./src/parsers/ExodusParser');
 
 const categories = require('./src/config/categories.json');
@@ -41,6 +42,12 @@ const reports = [
     parser: new BinanceParser(sources.binance),
     sourcePath: 'binance.csv',
     outputPath: 'binance_report.xlsx',
+  }),
+  new Report({
+    reader, writer, categorizer,
+    parser: new PayoneerParser(sources.payoneer),
+    sourcePath: 'payoneer.csv',
+    outputPath: 'payoneer_report.xlsx',
   }),
 ];
 

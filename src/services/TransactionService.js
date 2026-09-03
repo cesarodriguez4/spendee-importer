@@ -13,6 +13,7 @@ const { BanescoVEParser } = require('../parsers/BanescoVEParser');
 const { BinanceParser } = require('../parsers/BinanceParser');
 const { ExodusParser } = require('../parsers/ExodusParser');
 const { SpendeeParser } = require('../parsers/SpendeeParser');
+const { PayoneerParser } = require('../parsers/PayoneerParser');
 
 const categorizer = new Categorizer(categories, tags, payees);
 const xlsReader = new FileReader();
@@ -26,6 +27,7 @@ const SOURCES_META = [
     options: [{ name: 'exchangeRate', label: 'Tasa de cambio (Bs/USD) — montos se exportan en USD', type: 'number', required: true, default: 650 }],
   },
   { id: 'binance',   label: 'Binance',              accept: '.csv,.xlsx', options: [] },
+  { id: 'payoneer',  label: 'Payoneer',             accept: '.csv,.xlsx', options: [] },
   {
     id: 'exodus',    label: 'Exodus',               accept: '.csv,.xlsx',
     options: [
@@ -48,6 +50,7 @@ const REGISTRY = {
   banesco:   { reader: xlsReader, build: () => new BanescoParser(sources.banesco) },
   banescoVE: { reader: xlsReader, build: (opts) => new BanescoVEParser(sources.banescoVE, opts.exchangeRate) },
   binance:   { reader: xlsReader, build: () => new BinanceParser(sources.binance) },
+  payoneer:  { reader: xlsReader, build: () => new PayoneerParser(sources.payoneer) },
   exodus:    {
     reader: xlsReader,
     build: (opts) => {
