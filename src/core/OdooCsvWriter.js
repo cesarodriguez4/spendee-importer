@@ -21,12 +21,18 @@ class OdooCsvWriter {
   }
 
   write(fileName, rows) {
-    const csvText = buildCsv(rows);
+    const csvText = OdooCsvWriter.buildCsv(rows);
     const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
     const buffer = Buffer.concat([bom, Buffer.from(csvText, 'utf8')]);
     const fullPath = path.join(this.outputDir, fileName);
     fs.writeFileSync(fullPath, buffer);
     return fullPath;
+  }
+
+  static buildCsv(rows) {
+    return rows
+      .map((row) => row.map(escapeCsvCell).join(','))
+      .join('\n');
   }
 }
 

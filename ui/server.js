@@ -4,6 +4,7 @@ const multer = require('multer');
 
 const { getRows, SOURCES_META } = require('../src/services/TransactionService');
 const { ExcelWriter } = require('../src/core/ExcelWriter');
+const { OdooCsvWriter } = require('../src/core/OdooCsvWriter');
 const { Row } = require('../src/core/Row');
 
 const app = express();
@@ -33,6 +34,25 @@ app.post('/api/export', (req, res) => {
   try {
     const { rows, fileName = 'report.xlsx', format } = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'rows must be an array' });
+
+    if (format === 'odoo') {
+      const data = [
+        Row.odooHeaders(),
+        ...rows.map((r) => {
+          const date = typeof r.date === 'string' ? r.date.slice(0, 10) : r.date;
+          const amount = r.income != null && r.income !== '' ? Number(r.income) : (r.expense != null && r.expense !== '' ? -Number(r.expense) : 0);
+          return [date, r.name, r.reference ?? '', amount, r.payee ?? ''];
+        }),
+      ];
+      const buffer = OdooCsvWriter.buildCsv(data);
+      const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
+      const fullBuffer = Buffer.concat([bom, Buffer.from(buffer, 'utf8')]);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.send(fullBuffer);
+      return;
+    }
+
     // Tanto "wallet" como "spendee" exportan con Monto único + Payee + Currency
     const withPayee = format
       ? (format === 'spendee' || format === 'wallet')

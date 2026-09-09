@@ -128,7 +128,9 @@ async function onProcess() {
 function renderPreview(rows) {
   $('#preview-section').classList.remove('hidden');
   $('#row-count').textContent = `(${rows.length})`;
-  $('#output-name').value = `${state.source.id}_report.xlsx`;
+  $('#output-name').value = currentFormat() === 'odoo'
+    ? `${state.source.id}_odoo.csv`
+    : `${state.source.id}_report.xlsx`;
   const thead = $('#preview thead tr');
   thead.innerHTML = '<th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Tags</th><th>Gasto</th><th>Ingreso</th>'
     + '<th>Payee</th><th>Currency</th>';
@@ -174,7 +176,10 @@ function amountTd(value, kind) {
 }
 
 async function onDownload() {
-  const baseName = $('#output-name').value.trim() || `${state.source.id}_report.xlsx`;
+  const defaultName = currentFormat() === 'odoo'
+    ? `${state.source.id}_odoo.csv`
+    : `${state.source.id}_report.xlsx`;
+  const baseName = $('#output-name').value.trim() || defaultName;
   const CHUNK_SIZE = 900;
   const chunks = state.rows.length > CHUNK_SIZE ? chunkRows(state.rows, CHUNK_SIZE) : [state.rows];
   try {
@@ -323,7 +328,8 @@ async function onBatchRun() {
     for (const job of jobs) {
       setBatchStatus(`Procesando ${job.source} (${done + 1}/${jobs.length})…`);
       const rows = await previewJob(job);
-      await downloadChunk(rows, `${job.source}_report.xlsx`, format);
+      const batchFileName = format === 'odoo' ? `${job.source}_odoo.csv` : `${job.source}_report.xlsx`;
+      await downloadChunk(rows, batchFileName, format);
       done += 1;
     }
     setBatchStatus(`Listo: ${done} archivo(s) descargado(s).`);
