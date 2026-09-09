@@ -1,7 +1,9 @@
 const { FileReader } = require('./src/core/FileReader');
 const { ExcelWriter } = require('./src/core/ExcelWriter');
+const { OdooCsvWriter } = require('./src/core/OdooCsvWriter');
 const { Categorizer } = require('./src/core/Categorizer');
 const { Report } = require('./src/core/Report');
+const { Row } = require('./src/core/Row');
 
 const { MercantilParser } = require('./src/parsers/MercantilParser');
 const { BanescoParser } = require('./src/parsers/BanescoParser');
@@ -16,7 +18,13 @@ const sources = require('./src/config/sources.json');
 
 const reader = new FileReader();
 const writer = new ExcelWriter();
+const csvWriter = new OdooCsvWriter();
 const categorizer = new Categorizer(categories, tags);
+
+const odooFormatter = {
+  headers: () => Row.odooHeaders(),
+  mapRow: (row) => row.toOdooArray(),
+};
 
 const reports = [
   new Report({
@@ -51,7 +59,44 @@ const reports = [
   }),
 ];
 
+const odooReports = [
+  new Report({
+    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    parser: new MercantilParser(sources.mercantil),
+    sourcePath: 'mercantil.xlsx',
+    outputPath: 'mercantil_odoo.csv',
+  }),
+  new Report({
+    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    parser: new BanescoParser(sources.banesco),
+    sourcePath: 'banesco.xls',
+    outputPath: 'banesco_odoo.csv',
+  }),
+  new Report({
+    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    parser: new BanescoVEParser(sources.banescoVE, 650),
+    sourcePath: 'banescove.xls',
+    outputPath: 'banescoVE_odoo.csv',
+  }),
+  new Report({
+    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    parser: new BinanceParser(sources.binance),
+    sourcePath: 'binance.csv',
+    outputPath: 'binance_odoo.csv',
+  }),
+  new Report({
+    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    parser: new PayoneerParser(sources.payoneer),
+    sourcePath: 'payoneer.csv',
+    outputPath: 'payoneer_odoo.csv',
+  }),
+];
+
 for (const report of reports) {
+  console.log(report.run());
+}
+
+for (const report of odooReports) {
   console.log(report.run());
 }
 
