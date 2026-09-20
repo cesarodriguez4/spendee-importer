@@ -6,8 +6,10 @@ const payees = require('../config/payees.json');
 const { Categorizer } = require('../core/Categorizer');
 const { FileReader } = require('../core/FileReader');
 const { CsvReader } = require('../core/CsvReader');
+const { HtmlTableReader } = require('../core/HtmlTableReader');
 
 const { MercantilParser } = require('../parsers/MercantilParser');
+const { BancamigaParser } = require('../parsers/BancamigaParser');
 const { BanescoParser } = require('../parsers/BanescoParser');
 const { BanescoVEParser } = require('../parsers/BanescoVEParser');
 const { BinanceParser } = require('../parsers/BinanceParser');
@@ -18,6 +20,7 @@ const { PayoneerParser } = require('../parsers/PayoneerParser');
 const categorizer = new Categorizer(categories, tags, payees);
 const xlsReader = new FileReader();
 const csvReader = new CsvReader();
+const htmlReader = new HtmlTableReader();
 
 const SOURCES_META = [
   { id: 'mercantil', label: 'Mercantil (Panama)', accept: '.xlsx,.xls', options: [] },
@@ -25,6 +28,14 @@ const SOURCES_META = [
   {
     id: 'banescoVE', label: 'Banesco Venezuela',    accept: '.xls,.xlsx',
     options: [{ name: 'exchangeRate', label: 'Tasa de cambio (Bs/USD) — montos se exportan en USD', type: 'number', required: true, default: 650 }],
+  },
+  {
+    id: 'bancamiga', label: 'Bancamiga (Venezuela)', accept: '.xls,.xlsx,.html,.htm',
+    options: [{
+      name: 'exchangeRate',
+      label: 'Tasa de cambio (Bs/USD) — opcional; en blanco exporta en Bs',
+      type: 'number', required: false,
+    }],
   },
   { id: 'binance',   label: 'Binance',              accept: '.csv,.xlsx', options: [] },
   { id: 'payoneer',  label: 'Payoneer',             accept: '.csv,.xlsx', options: [] },
@@ -49,6 +60,7 @@ const REGISTRY = {
   mercantil: { reader: xlsReader, build: () => new MercantilParser(sources.mercantil) },
   banesco:   { reader: xlsReader, build: () => new BanescoParser(sources.banesco) },
   banescoVE: { reader: xlsReader, build: (opts) => new BanescoVEParser(sources.banescoVE, opts.exchangeRate) },
+  bancamiga: { reader: htmlReader, build: (opts) => new BancamigaParser(sources.bancamiga, opts) },
   binance:   { reader: xlsReader, build: () => new BinanceParser(sources.binance) },
   payoneer:  { reader: xlsReader, build: () => new PayoneerParser(sources.payoneer) },
   exodus:    {

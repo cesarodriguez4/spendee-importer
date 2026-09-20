@@ -40,7 +40,8 @@ app.post('/api/export', (req, res) => {
         Row.odooHeaders(),
         ...rows.map((r) => {
           const date = typeof r.date === 'string' ? r.date.slice(0, 10) : r.date;
-          const amount = r.income != null && r.income !== '' ? Number(r.income) : (r.expense != null && r.expense !== '' ? -Number(r.expense) : 0);
+          // `expense` is already signed (negative) by splitIncomeExpense — don't negate it.
+          const amount = r.income != null && r.income !== '' ? Number(r.income) : (r.expense != null && r.expense !== '' ? Number(r.expense) : 0);
           return [date, r.name, r.reference ?? '', amount, r.payee ?? ''];
         }),
       ];

@@ -26,7 +26,7 @@ describe('Row Odoo', () => {
       name: 'Gasto',
       category: 'C',
       tags: 'T',
-      expense: 25.5,
+      expense: -25.5,
       income: null,
     });
     expect(row.toOdooArray()).toEqual([
@@ -66,7 +66,7 @@ describe('Row Odoo', () => {
       name: 'Transfer',
       category: 'C',
       tags: 'T',
-      expense: 10,
+      expense: -10,
       income: null,
       payee: 'Juan',
       reference: 'REF-123',

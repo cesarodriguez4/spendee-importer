@@ -17,7 +17,8 @@ class Row {
 
   toOdooArray() {
     const date = typeof this.date === 'string' ? this.date.slice(0, 10) : this.date;
-    const amount = this.income != null ? this.income : (this.expense != null ? -this.expense : 0);
+    // `expense` is already signed (negative) by splitIncomeExpense — don't negate it.
+    const amount = this.income != null ? this.income : (this.expense != null ? this.expense : 0);
     return [date, this.name, this.reference || '', amount, this.payee || ''];
   }
 

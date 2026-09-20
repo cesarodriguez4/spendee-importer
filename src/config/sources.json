@@ -21,6 +21,14 @@
     "columns": { "date": 0, "name": 2, "amount": 3 },
     "categoryFallback": "Sin Asignar"
   },
+  "bancamiga": {
+    "dateFormat": "DD/MM/YY",
+    "locale": "es",
+    "columns": { "date": 1, "reference": 2, "name": 3, "expense": 4, "income": 5 },
+    "categoryFallback": "Sin Asignar",
+    "merchantSeparator": " - ",
+    "textRepairs": [["Comisi�n", "Comision"], ["Cr�dito", "Credito"]]
+  },
   "binance": {
     "headerRows": 1,
     "dateFormat": "YY-MM-DD HH:mm:ss",

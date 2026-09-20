@@ -18,6 +18,8 @@
     "GANDALF",
     "DLOSTARLINK",
     "MOVISTAR",
+    "Movistar",
+    "PAGO D SERV ELECTRICO",
     "DIGITEL"
   ],
   "Comida en la calle": [
@@ -26,7 +28,9 @@
     "PISTAZIE",
     "TOKYO",
     "CINES",
-    "PANAD"
+    "PANAD",
+    "CHOCOLATIC",
+    "PAN PAST CHARC"
   ],
   "Comisiones": [
     "COMISIONES",
@@ -37,7 +41,10 @@
     "TDD",
     "ITBMS",
     "COM.",
-    "EMISION"
+    "EMISION",
+    "Mantenimiento de Cuenta",
+    "Envio de SMS",
+    "Emision Estado de Cuenta"
   ],
   "Other": [
     "INTERACTIVE BROKERS",
@@ -50,7 +57,8 @@
   "Salud": [
     "FARMACIA",
     "MERCANTIL GESTION",
-    "UNIVERSITAS"
+    "UNIVERSITAS",
+    "FARMATODO"
   ],
   "Lujos": [
     "PAGO TDC",
@@ -65,7 +73,11 @@
     "TRF",
     "PAYONEER",
     "INTERNA",
-    "TRANS.CTAS. A TERCEROS BANESCO"
+    "TRANS.CTAS. A TERCEROS BANESCO",
+    "Credito Inmediato",
+    "Fondos Recibidos",
+    "Pago Movil",
+    "P2C"
   ],
   "Servicios de Internet": [
     "HEROKU",
