@@ -21,10 +21,12 @@ const writer = new ExcelWriter();
 const csvWriter = new OdooCsvWriter();
 const categorizer = new Categorizer(categories, tags);
 
-const odooFormatter = {
+// Closure over the source id so the journal never collides with the index
+// argument that Array.prototype.map passes to mapRow.
+const makeOdooFormatter = (sourceId) => ({
   headers: () => Row.odooHeaders(),
-  mapRow: (row) => row.toOdooArray(),
-};
+  mapRow: (row) => row.toOdooArray((sources[sourceId] && sources[sourceId].journal) || ''),
+});
 
 const reports = [
   new Report({
@@ -61,31 +63,31 @@ const reports = [
 
 const odooReports = [
   new Report({
-    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    reader, writer: csvWriter, categorizer, formatter: makeOdooFormatter('mercantil'),
     parser: new MercantilParser(sources.mercantil),
     sourcePath: 'mercantil.xlsx',
     outputPath: 'mercantil_odoo.csv',
   }),
   new Report({
-    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    reader, writer: csvWriter, categorizer, formatter: makeOdooFormatter('banesco'),
     parser: new BanescoParser(sources.banesco),
     sourcePath: 'banesco.xls',
     outputPath: 'banesco_odoo.csv',
   }),
   new Report({
-    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    reader, writer: csvWriter, categorizer, formatter: makeOdooFormatter('banescoVE'),
     parser: new BanescoVEParser(sources.banescoVE, 650),
     sourcePath: 'banescove.xls',
     outputPath: 'banescoVE_odoo.csv',
   }),
   new Report({
-    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    reader, writer: csvWriter, categorizer, formatter: makeOdooFormatter('binance'),
     parser: new BinanceParser(sources.binance),
     sourcePath: 'binance.csv',
     outputPath: 'binance_odoo.csv',
   }),
   new Report({
-    reader, writer: csvWriter, categorizer, formatter: odooFormatter,
+    reader, writer: csvWriter, categorizer, formatter: makeOdooFormatter('payoneer'),
     parser: new PayoneerParser(sources.payoneer),
     sourcePath: 'payoneer.csv',
     outputPath: 'payoneer_odoo.csv',

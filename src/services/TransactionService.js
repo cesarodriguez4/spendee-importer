@@ -73,17 +73,31 @@ const REGISTRY = {
   spendee:   { reader: csvReader, build: () => new SpendeeParser() },
 };
 
+// Odoo journal name for a source, '' when none is configured.
+// `sources` has no entry for registry-only sources like spendee, hence the guard.
+function journalFor(source) {
+  return (sources[source] && sources[source].journal) || '';
+}
+
 function getRows({ buffer, source, fileName = '', options = {} }) {
   const entry = REGISTRY[source];
   if (!entry) throw new Error(`Unknown source: ${source}`);
 
   const parser = entry.build(options);
+  let rows;
   if (source === 'spendee') {
-    const rows = readSpendeeRows(buffer, fileName);
-    return parser.parse(rows, categorizer);
+    rows = parser.parse(readSpendeeRows(buffer, fileName), categorizer);
+  } else {
+    rows = parser.parse(entry.reader.readBuffer(buffer), categorizer);
   }
-  const raw = entry.reader.readBuffer(buffer);
-  return parser.parse(raw, categorizer);
+
+  // Stamped here so it survives the JSON round-trip to /api/export, which only
+  // receives the rows themselves — never the source or its options.
+  const journal = journalFor(source);
+  if (journal) {
+    for (const row of rows) row.journal = journal;
+  }
+  return rows;
 }
 
 function readSpendeeRows(buffer, fileName) {
@@ -105,4 +119,4 @@ function looksLikeXlsx(buffer) {
   return buffer && buffer.length >= 2 && buffer[0] === 0x50 && buffer[1] === 0x4b;
 }
 
-module.exports = { getRows, SOURCES_META };
+module.exports = { getRows, journalFor, SOURCES_META };

@@ -3,7 +3,7 @@ const { Row } = require('../../src/core/Row');
 describe('Row Odoo', () => {
   it('has correct Odoo headers', () => {
     expect(Row.odooHeaders()).toEqual([
-      'Date', 'Payment Reference', 'Reference', 'Amount', 'Partner',
+      'Date', 'Payment Reference', 'Reference', 'Amount', 'Partner', 'Journal',
     ]);
   });
 
@@ -30,7 +30,7 @@ describe('Row Odoo', () => {
       income: null,
     });
     expect(row.toOdooArray()).toEqual([
-      '2024-01-01', 'Gasto', '', -25.5, '',
+      '2024-01-01', 'Gasto', '', -25.5, '', '',
     ]);
   });
 
@@ -44,7 +44,7 @@ describe('Row Odoo', () => {
       income: 100,
     });
     expect(row.toOdooArray()).toEqual([
-      '2024-01-01', 'Ingreso', '', 100, '',
+      '2024-01-01', 'Ingreso', '', 100, '', '',
     ]);
   });
 
@@ -72,7 +72,39 @@ describe('Row Odoo', () => {
       reference: 'REF-123',
     });
     expect(row.toOdooArray()).toEqual([
-      '2024-02-10', 'Transfer', 'REF-123', -10, 'Juan',
+      '2024-02-10', 'Transfer', 'REF-123', -10, 'Juan', '',
     ]);
+  });
+
+  describe('journal column', () => {
+    const base = {
+      date: '2024-02-10T00:00:00.000Z',
+      name: 'Transfer',
+      category: 'C',
+      tags: 'T',
+      expense: -10,
+      income: null,
+    };
+
+    it('takes the journal from the argument', () => {
+      const row = new Row(base);
+      expect(row.toOdooArray('Bancamiga Banco Universal C.A')[5])
+        .toBe('Bancamiga Banco Universal C.A');
+    });
+
+    it('falls back to the journal set on the row', () => {
+      const row = new Row({ ...base, journal: 'Bancamiga Banco Universal C.A' });
+      expect(row.toOdooArray()[5]).toBe('Bancamiga Banco Universal C.A');
+    });
+
+    it('prefers the argument over the row property', () => {
+      const row = new Row({ ...base, journal: 'Viejo' });
+      expect(row.toOdooArray('Nuevo')[5]).toBe('Nuevo');
+    });
+
+    it('keeps toArray free of the journal', () => {
+      const row = new Row({ ...base, journal: 'Bancamiga Banco Universal C.A' });
+      expect(row.toArray()).toEqual(['2024-02-10T00:00:00.000Z', 'Transfer', 'C', 'T', -10, null]);
+    });
   });
 });

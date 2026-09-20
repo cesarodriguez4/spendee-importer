@@ -38,12 +38,7 @@ app.post('/api/export', (req, res) => {
     if (format === 'odoo') {
       const data = [
         Row.odooHeaders(),
-        ...rows.map((r) => {
-          const date = typeof r.date === 'string' ? r.date.slice(0, 10) : r.date;
-          // `expense` is already signed (negative) by splitIncomeExpense — don't negate it.
-          const amount = r.income != null && r.income !== '' ? Number(r.income) : (r.expense != null && r.expense !== '' ? Number(r.expense) : 0);
-          return [date, r.name, r.reference ?? '', amount, r.payee ?? ''];
-        }),
+        ...rows.map((r) => Row.odooArrayFromPlain(r)),
       ];
       const buffer = OdooCsvWriter.buildCsv(data);
       const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
