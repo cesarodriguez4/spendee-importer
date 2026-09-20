@@ -11,11 +11,17 @@ const html = `<table>
 describe('journalFor', () => {
   it('returns the journal configured for the source', () => {
     expect(journalFor('bancamiga')).toBe(sources.bancamiga.journal);
-    expect(journalFor('bancamiga')).toBe('Bancamiga Banco Universal C.A');
+    expect(journalFor('bancamiga')).toBe('Bancamiga Banco Universal C.A.');
+    expect(journalFor('bancamiga', 'VES')).toBe('Bancamiga Banco Universal C.A.');
+  });
+
+  it('returns the USD journal when the rows were converted to USD', () => {
+    expect(journalFor('bancamiga', 'USD')).toBe('Bancamiga Cash USD');
   });
 
   it('returns an empty string for sources without a journal', () => {
     expect(journalFor('mercantil')).toBe('');
+    expect(journalFor('mercantil', 'USD')).toBe('');
   });
 
   it('does not throw for registry-only sources missing from sources.json', () => {
@@ -27,12 +33,21 @@ describe('getRows journal stamping', () => {
   it('stamps the journal on every parsed row', () => {
     const rows = getRows({ buffer: Buffer.from(html), source: 'bancamiga', options: {} });
     expect(rows).toHaveLength(2);
-    for (const row of rows) expect(row.journal).toBe('Bancamiga Banco Universal C.A');
+    for (const row of rows) expect(row.journal).toBe('Bancamiga Banco Universal C.A.');
+  });
+
+  it('stamps the USD journal when an exchange rate converts the amounts', () => {
+    const rows = getRows({ buffer: Buffer.from(html), source: 'bancamiga', options: { exchangeRate: 650 } });
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
+      expect(row.currency).toBe('USD');
+      expect(row.journal).toBe('Bancamiga Cash USD');
+    }
   });
 
   it('survives the JSON round-trip the UI export depends on', () => {
     const [first] = getRows({ buffer: Buffer.from(html), source: 'bancamiga', options: {} });
     const plain = JSON.parse(JSON.stringify({ ...first }));
-    expect(Row.odooArrayFromPlain(plain)[5]).toBe('Bancamiga Banco Universal C.A');
+    expect(Row.odooArrayFromPlain(plain)[5]).toBe('Bancamiga Banco Universal C.A.');
   });
 });

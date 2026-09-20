@@ -75,8 +75,13 @@ const REGISTRY = {
 
 // Odoo journal name for a source, '' when none is configured.
 // `sources` has no entry for registry-only sources like spendee, hence the guard.
-function journalFor(source) {
-  return (sources[source] && sources[source].journal) || '';
+// Sources that keep a separate USD journal (Bancamiga) pick it by row currency:
+// the parser already converted the amounts, so the journal has to match them.
+function journalFor(source, currency) {
+  const config = sources[source];
+  if (!config) return '';
+  if (currency === 'USD' && config.journalUSD) return config.journalUSD;
+  return config.journal || '';
 }
 
 function getRows({ buffer, source, fileName = '', options = {} }) {
@@ -93,9 +98,9 @@ function getRows({ buffer, source, fileName = '', options = {} }) {
 
   // Stamped here so it survives the JSON round-trip to /api/export, which only
   // receives the rows themselves — never the source or its options.
-  const journal = journalFor(source);
-  if (journal) {
-    for (const row of rows) row.journal = journal;
+  for (const row of rows) {
+    const journal = journalFor(source, row.currency);
+    if (journal) row.journal = journal;
   }
   return rows;
 }

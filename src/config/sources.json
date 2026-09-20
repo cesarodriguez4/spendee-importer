@@ -22,7 +22,8 @@
     "categoryFallback": "Sin Asignar"
   },
   "bancamiga": {
-    "journal": "Bancamiga Banco Universal C.A",
+    "journal": "Bancamiga Banco Universal C.A.",
+    "journalUSD": "Bancamiga Cash USD",
     "dateFormat": "DD/MM/YY",
     "locale": "es",
     "columns": { "date": 1, "reference": 2, "name": 3, "expense": 4, "income": 5 },
