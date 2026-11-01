@@ -4,3 +4,8 @@
 *.csv
 .DS_Store
 exports/
+tmp/
+data/
+state/
+wallet-accounts.json
+.env

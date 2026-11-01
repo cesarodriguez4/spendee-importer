@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "wallet": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.wallet.budgetbakers.com",
+        "--header",
+        "Authorization: Bearer ${WALLET_MCP_TOKEN}"
+      ]
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "banesco": {
+    "USD": "ACCOUNT_ID"
+  },
+  "banescoVE": {
+    "VES": "ACCOUNT_ID",
+    "USD": "ACCOUNT_ID"
+  },
+  "mercantil": {
+    "USD": "ACCOUNT_ID"
+  },
+  "binance": {
+    "USD": "ACCOUNT_ID"
+  },
+  "payoneer": {
+    "USD": "ACCOUNT_ID",
+    "EUR": "ACCOUNT_ID",
+    "GBP": "ACCOUNT_ID"
+  }
+}

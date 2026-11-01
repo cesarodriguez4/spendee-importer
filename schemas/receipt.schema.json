@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Screenshot review",
+  "description": "What an agent read from a batch of screenshots. Report only what is visible. Use null or \"unclear\" rather than guessing; src/parsers/ReceiptParser.js decides what gets written.",
+  "type": "object",
+  "required": ["screenshots"],
+  "properties": {
+    "screenshots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind"],
+        "properties": {
+          "id": { "type": "string", "description": "The id printed by `sync-screenshots fetch`." },
+          "kind": {
+            "enum": ["receipt", "other"],
+            "description": "receipt: a single completed-or-attempted payment or transfer from a supported bank. other: anything else, including balance screens and movement lists."
+          },
+          "bank": { "enum": ["banescoVE", "binancePay"] },
+          "status": {
+            "enum": ["success", "pending", "failed", "unclear"],
+            "description": "success only when the screen explicitly shows the operation completed."
+          },
+          "direction": {
+            "enum": ["expense", "income"],
+            "description": "From the point of view of the account owner."
+          },
+          "amount": { "type": ["number", "null"], "description": "Positive decimal number, as shown. 65.000,00 is 65000." },
+          "currency": { "type": ["string", "null"], "description": "As shown: VES for Bs, USDT for Binance Pay." },
+          "date": { "type": ["string", "null"], "description": "YYYY-MM-DD HH:mm:ss, YYYY-MM-DD HH:mm or YYYY-MM-DD, as shown on the receipt. Not the time of the screenshot." },
+          "reference": { "type": ["string", "null"], "description": "The bank reference or Binance Pay order id, exactly as shown." },
+          "counterparty": { "type": ["string", "null"] },
+          "concept": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

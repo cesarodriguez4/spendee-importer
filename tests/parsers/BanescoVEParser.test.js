@@ -6,8 +6,25 @@ const sources = require('../../src/config/sources.json');
 describe('BanescoVEParser', () => {
   const categorizer = new Categorizer({}, {});
 
-  it('throws if no exchange rate is provided', () => {
-    expect(() => new BanescoVEParser(sources.banescoVE)).toThrow(/exchange rate/i);
+  it('keeps the amounts in Bs when no exchange rate is provided', () => {
+    const parser = new BanescoVEParser(sources.banescoVE);
+    const [row] = parser.parse([
+      ['header', '', '', ''],
+      ['2025/03/15', '', 'PANADERIA', '-65.000,00'],
+    ], categorizer);
+    expect(row.expense).toBe(-65000);
+    expect(row.currency).toBe('VES');
+    expect(row.name).toBe('PANADERIA');
+  });
+
+  it('builds the same identity whatever the exchange rate', () => {
+    const raw = [
+      ['header', '', '', ''],
+      ['2025/03/15', '', 'PANADERIA', '-65.000,00'],
+    ];
+    const identityAt = (rate) => new BanescoVEParser(sources.banescoVE, rate).parse(raw, categorizer)[0].identity;
+    expect(identityAt(650)).toBe(identityAt(700));
+    expect(identityAt(650)).toBe(identityAt(undefined));
   });
 
   it('throws if the exchange rate is zero or negative', () => {

@@ -35,6 +35,7 @@ class BancamigaParser {
           payee: categorizer.payee(name) ?? this.#merchant(name),
           currency: this.exchangeRate ? 'USD' : 'VES',
           reference: String(raw[columns.reference] ?? '').replace(/^'/, '').trim(),
+          identity: [String(raw[columns.date]).trim(), raw[columns.reference], name, credit - debit].join('|'),
           ...splitIncomeExpense(amount),
         });
       });

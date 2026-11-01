@@ -1,17 +1,19 @@
 {
   "name": "spendee-importer",
   "version": "1.0.0",
-  "description": "Formats files to be used in the Spendee Importer",
+  "description": "Transforms bank and Spendee exports into categorized transactions and pushes them to Wallet by Budget Bakers via REST API",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "ui": "node ui/server.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "import-to-wallet": "node scripts/import-to-wallet.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "dayjs": "^1.11.20",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "multer": "^2.1.1",
     "node-xlsx": "^0.23.0"

@@ -5,14 +5,11 @@ const { splitIncomeExpense } = require('../core/amountParser');
 
 class ExodusParser {
   constructor(schema, { currency, wallet, startDate, endDate }) {
-    if (!startDate || !endDate) {
-      throw new Error('ExodusParser requires startDate and endDate');
-    }
     this.schema = schema;
     this.currency = currency;
     this.wallet = wallet;
-    this.startDate = dayjs(startDate);
-    this.endDate = dayjs(endDate);
+    this.startDate = startDate ? dayjs(startDate) : null;
+    this.endDate = endDate ? dayjs(endDate) : null;
   }
 
   parse(rawData) {
@@ -35,6 +32,7 @@ class ExodusParser {
         name: `${transactionUrl} ${personalNote}`,
         category: 'Transferencias',
         tags: '',
+        currency: this.currency || raw[columns.currencyA] || raw[columns.currencyB],
         expense,
         income,
       }));
@@ -49,8 +47,8 @@ class ExodusParser {
     if (!date.isValid()) return false;
     if (this.currency && currency !== this.currency) return false;
     if (this.wallet && wallet !== this.wallet) return false;
-    return (date.isSame(this.startDate) || date.isAfter(this.startDate))
-      && (date.isSame(this.endDate) || date.isBefore(this.endDate));
+    return (!this.startDate || date.isSame(this.startDate) || date.isAfter(this.startDate))
+      && (!this.endDate || date.isSame(this.endDate) || date.isBefore(this.endDate));
   }
 }
 

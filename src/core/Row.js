@@ -1,5 +1,5 @@
 class Row {
-  constructor({ date, name, category, tags, expense, income, payee, currency, reference, journal }) {
+  constructor({ date, name, category, tags, expense, income, payee, currency, reference, journal, identity, holdReason, walletSource }) {
     this.date = date;
     this.name = name;
     this.category = category;
@@ -10,6 +10,10 @@ class Row {
     if (currency !== undefined) this.currency = currency;
     if (reference !== undefined) this.reference = reference;
     if (journal !== undefined) this.journal = journal;
+    // Wallet import: raw values that stay the same whatever the exchange rate.
+    if (identity !== undefined) this.identity = identity;
+    if (holdReason !== undefined) this.holdReason = holdReason;
+    if (walletSource !== undefined) this.walletSource = walletSource;
   }
 
   toArray() {

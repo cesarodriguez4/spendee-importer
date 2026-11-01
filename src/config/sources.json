@@ -15,6 +15,8 @@
     "tagFallback": "Padres"
   },
   "banescoVE": {
+    "usdNote": true,
+    "walletFrom": "2026-10-06",
     "headerRows": 1,
     "dateFormat": "YYYY/MM/DD",
     "locale": "es",
@@ -32,8 +34,9 @@
     "textRepairs": [["Comisi�n", "Comision"], ["Cr�dito", "Credito"]]
   },
   "binance": {
+    "walletFrom": "2026-10-06",
     "headerRows": 1,
-    "dateFormat": "YY-MM-DD HH:mm:ss",
+    "dateFormat": "YYYY-MM-DD HH:mm:ss",
     "columns": { "date": 1, "account": 2, "operation": 3, "coin": 4, "amount": 5, "remark": 6 },
     "excludeAccounts": [],
     "excludeOperations": [
@@ -46,6 +49,7 @@
     "categoryFallback": "Sin Asignar"
   },
   "payoneer": {
+    "walletFrom": "2026-10-07",
     "headerRows": 1,
     "dateFormat": "DD MMM, YYYY",
     "locale": "en",

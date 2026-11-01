@@ -1,3 +1,5 @@
+const path = require('path');
+
 const sources = require('../config/sources.json');
 const categories = require('../config/categories.json');
 const tags = require('../config/tags.json');
@@ -16,6 +18,8 @@ const { BinanceParser } = require('../parsers/BinanceParser');
 const { ExodusParser } = require('../parsers/ExodusParser');
 const { SpendeeParser } = require('../parsers/SpendeeParser');
 const { PayoneerParser } = require('../parsers/PayoneerParser');
+const { ReceiptParser, RECEIPT_SOURCE } = require('../parsers/ReceiptParser');
+const { matchesDateFormat } = require('../core/dateParser');
 
 const categorizer = new Categorizer(categories, tags, payees);
 const xlsReader = new FileReader();
@@ -27,7 +31,7 @@ const SOURCES_META = [
   { id: 'banesco',   label: 'Banesco Panamá',       accept: '.xls,.xlsx', options: [] },
   {
     id: 'banescoVE', label: 'Banesco Venezuela',    accept: '.xls,.xlsx',
-    options: [{ name: 'exchangeRate', label: 'Tasa de cambio (Bs/USD) — montos se exportan en USD', type: 'number', required: true, default: 650 }],
+    options: [{ name: 'exchangeRate', label: 'Tasa de cambio (Bs/USD) — montos se exportan en USD', type: 'number', required: false, default: 650 }],
   },
   {
     id: 'bancamiga', label: 'Bancamiga (Venezuela)', accept: '.xls,.xlsx,.html,.htm',
@@ -42,8 +46,8 @@ const SOURCES_META = [
   {
     id: 'exodus',    label: 'Exodus',               accept: '.csv,.xlsx',
     options: [
-      { name: 'startDate', label: 'Fecha desde', type: 'date', required: true },
-      { name: 'endDate',   label: 'Fecha hasta', type: 'date', required: true },
+      { name: 'startDate', label: 'Fecha desde', type: 'date', required: false },
+      { name: 'endDate',   label: 'Fecha hasta', type: 'date', required: false },
       {
         name: 'wallet', label: 'Wallet/Moneda', type: 'select', required: true,
         choices: sources.exodus.wallets.map((w) => ({
@@ -54,6 +58,7 @@ const SOURCES_META = [
     ],
   },
   { id: 'spendee',   label: 'Spendee → Wallet',     accept: '.csv,.xlsx,.xls', options: [] },
+  { id: RECEIPT_SOURCE, label: 'Recibos (capturas)', accept: '.json', options: [] },
 ];
 
 const REGISTRY = {
@@ -71,7 +76,14 @@ const REGISTRY = {
     },
   },
   spendee:   { reader: csvReader, build: () => new SpendeeParser() },
+  [RECEIPT_SOURCE]: { reader: { readBuffer: (buffer) => JSON.parse(buffer.toString('utf8')) }, build: () => new ReceiptParser(sources) },
 };
+
+// Columns holding an amount, and whether the source writes 1.234,56 instead of 1,234.56.
+const AMOUNT_COLUMNS = ['amount', 'expense', 'income', 'outAmount', 'inAmount'];
+const EU_AMOUNT_SOURCES = new Set(['banescoVE', 'bancamiga']);
+const US_AMOUNT = /^-?((\d{1,3}(,\d{3})+|\d+)(\.\d+)?|\.\d+)$/;
+const EU_AMOUNT = /^-?((\d{1,3}(\.\d{3})+|\d+)(,\d+)?|,\d+)$/;
 
 // Odoo journal name for a source, '' when none is configured.
 // `sources` has no entry for registry-only sources like spendee, hence the guard.
@@ -105,6 +117,64 @@ function getRows({ buffer, source, fileName = '', options = {} }) {
   return rows;
 }
 
+function isAmountCell(value, pattern) {
+  if (value === undefined || value === null || value === '') return true;
+  return typeof value === 'number' || pattern.test(String(value).trim());
+}
+
+function fileFitsSource(source, buffer, fileName) {
+  if (source === RECEIPT_SOURCE) return true;
+  if (source === 'spendee') {
+    const [first] = readSpendeeRows(buffer, fileName);
+    return Boolean(first) && 'Date' in first && 'Amount' in first;
+  }
+
+  const { columns, dateFormat, locale } = sources[source];
+  const pattern = EU_AMOUNT_SOURCES.has(source) ? EU_AMOUNT : US_AMOUNT;
+  const amountColumns = AMOUNT_COLUMNS.map((name) => columns[name]).filter((col) => col !== undefined);
+  const rows = REGISTRY[source].reader.readBuffer(buffer)
+    .filter((row) => matchesDateFormat(row[columns.date], dateFormat, locale));
+
+  return rows.length > 0 && rows.every((row) => (
+    amountColumns.every((col) => isAmountCell(row[col], pattern))
+    && amountColumns.some((col) => row[col] !== undefined && row[col] !== '')
+  ));
+}
+
+/**
+ * Works out which source a file came from by reading it: exports rarely carry
+ * the source's name. `source` is null unless exactly one candidate remains.
+ */
+function detectSource({ buffer, fileName = '' }) {
+  const ext = path.extname(fileName).toLowerCase();
+  const candidates = SOURCES_META
+    .filter((meta) => meta.accept.split(',').includes(ext))
+    .map((meta) => meta.id)
+    .filter((source) => {
+      try {
+        return fileFitsSource(source, buffer, fileName);
+      } catch {
+        return false;
+      }
+    });
+
+  if (candidates.length === 1) return { source: candidates[0], candidates };
+
+  // The name only settles a tie; longest id first so banescoVE beats banesco.
+  const base = path.basename(fileName).toLowerCase();
+  const named = [...candidates]
+    .sort((a, b) => b.length - a.length)
+    .find((source) => base.includes(source.toLowerCase()));
+  return { source: named || null, candidates };
+}
+
+// One option set per parser run. Exodus exports mix wallets, and each one is a
+// separate account in Wallet, so without a choice every configured wallet runs.
+function expandOptions(source, options = {}) {
+  if (source !== 'exodus' || (options.wallet && options.wallet !== 'all')) return [options];
+  return sources.exodus.wallets.map((w) => ({ ...options, wallet: `${w.currency}|${w.wallet}` }));
+}
+
 function readSpendeeRows(buffer, fileName) {
   const isXlsx = /\.(xlsx|xls)$/i.test(fileName) || looksLikeXlsx(buffer);
   if (isXlsx) {
@@ -124,4 +194,4 @@ function looksLikeXlsx(buffer) {
   return buffer && buffer.length >= 2 && buffer[0] === 0x50 && buffer[1] === 0x4b;
 }
 
-module.exports = { getRows, journalFor, SOURCES_META };
+module.exports = { detectSource, expandOptions, getRows, journalFor, SOURCES_META };

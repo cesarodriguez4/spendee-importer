@@ -1,0 +1,124 @@
+# AGENTS.md — spendee-importer
+
+Start here if you are an agent working with this repository.
+
+## What this repo does
+
+Turns bank and wallet exports, and screenshots of bank receipts, into categorized transactions and records them in Wallet by Budget Bakers. Everything an agent needs is in this repo; OpenClaw is the daily client, but nothing depends on it.
+
+## What do you need to do?
+
+| Task | How |
+| --- | --- |
+| The user hands over a bank file | [skills/wallet-importer/SKILL.md](skills/wallet-importer/SKILL.md): `node scripts/import-to-wallet.js <file> --apply --json` |
+| Process phone screenshots | [skills/wallet-screenshots/SKILL.md](skills/wallet-screenshots/SKILL.md) |
+| Answer questions about the account | Read-only tools of the `wallet` MCP server (`.mcp.json`) |
+| Change the code | Keep reading |
+
+**All writes go through `WalletImporter`.** It is the only thing preventing duplicates, so never write records through MCP or a direct API call.
+
+## Repository layout
+
+- `src/core/` — shared building blocks (`Row`, `Categorizer`, `Report`, readers/writers).
+- `src/parsers/` — one parser per source/bank format. `ReceiptParser` takes what an agent read from screenshots.
+- `src/services/TransactionService.js` — source registry; `getRows` turns a file into `Row[]` and `detectSource` identifies a file by content.
+- `src/wallet/` — `WalletApiClient`, `WalletFormatter`, `WalletImporter` (plan and execute), `recordTag`, `BcvRate`.
+- `src/screenshots/` — Drive and local screenshot sources, and the reviewed-files ledger.
+- `scripts/import-to-wallet.js` — file import CLI.
+- `scripts/sync-screenshots.js` — screenshot run: `fetch`, then `record`.
+- `scripts/test-wallet-connection.js` — connectivity test.
+- `schemas/receipt.schema.json` — the contract for screenshot extraction.
+- `src/config/` — `sources.json`, `categories.json`, `tags.json`, `payees.json`.
+- `state/` (gitignored) — screenshot ledger and BCV rate cache. Safe to lose: note tags still stop duplicates.
+
+## Sources
+
+| source id | Description | Formats | Notes |
+| --- | --- | --- | --- |
+| `mercantil` | Mercantil Panama | Excel | |
+| `banesco` | Banesco Panama | Excel | `Estados_de_cuenta_*.xls` |
+| `banescoVE` | Banesco Venezuela | Excel | In Bs, USD at BCV in the note. `--exchangeRate` converts instead (the UI and Odoo flow do). |
+| `bancamiga` | Bancamiga Venezuela | Excel or HTML | `Movimientos_*.xls` is really HTML. Optional `--exchangeRate`. |
+| `binance` | Binance | CSV/Excel | USDT is recorded as USD |
+| `payoneer` | Payoneer | CSV/Excel | `report_*.csv`; currency per row |
+| `exodus` | Exodus | CSV/Excel | Runs every wallet in `sources.json` unless `--wallet` is given |
+| `spendee` | Spendee export | CSV/Excel | |
+| `receipt` | Screenshot review | JSON | Produced by an agent, see the schema |
+
+To add a source, register it in `TransactionService.REGISTRY` and `SOURCES_META`, and add its amount columns to detection if they are new. Test detection against a real export: strict dates and amount formats are what tell banks apart.
+
+## Import CLI
+
+```bash
+node scripts/import-to-wallet.js <file> [--source=<id>] [--apply] [--json]
+  [--account=<id>] [--accept=<tag,...>] [--category=<name>] [--output=<xlsx>] [--<source option>=<value>]
+```
+
+- Without `--apply` it writes nothing and shows what would happen.
+- `--output` writes a flat spreadsheet to `exports/` instead of using the API.
+- Exit codes: `0` done (rows may still be held, read the report); `1` nothing was written; `2` partial or unknown, re-run the same command.
+
+Row statuses: `new`, `created`, `duplicate`, `possible_duplicate`, `held`, `invalid`, `rate_unavailable`, `failed`, `unknown`, `not_attempted`.
+
+## How duplicates are prevented
+
+Wallet has no external id or idempotency, so `recordTag` appends `[si:<hash>]` to each note. The hash covers source, identity and the occurrence number in the file.
+
+- **Same tag in Wallet:** `duplicate`. Survives edits to the category and note text, as long as the tag stays.
+- **Same account and amount within a day, no tag match:** `possible_duplicate`. Not created unless accepted. Also covers manual records, and a statement arriving after its screenshot.
+- `Row.identity` must not depend on an exchange rate. Parsers that convert build it from raw values.
+
+Known gap: an older untagged record entered at a different rate has another amount, so it isn't detected.
+
+## Accounts and currency
+
+`wallet-accounts.json` (gitignored, see `wallet-accounts.example.json`) maps source and currency to a Wallet account id. **This repo is public**, so account ids, real bank references and other personal data never go in tracked files, tests included. An unmapped currency makes the row `invalid` rather than guessing an account. The API also rejects a `currencyCode` that differs from the account's, so Bs can't land in a USD account.
+
+`walletFrom` on a source holds older movements that earlier imports already recorded in a form nothing can match: Banesco Venezuela in a USD account, Binance with its dates wrongly in 2020, Payoneer with different amounts.
+
+`usdNote: true` on a source adds the USD equivalent at the BCV rate of the operation date to the note. The rate comes from bcv.today (unofficial) and never affects the amount. No rate means `rate_unavailable`, and the row retries on the next run.
+
+## Wallet API facts
+
+Spec: https://rest.budgetbakers.com/wallet/openapi. Guide: https://rest.budgetbakers.com/wallet/reference.
+
+- Base URL `https://rest.budgetbakers.com/wallet`; the client appends `/v1/api`. Auth: `Authorization: Bearer <token>`. Premium plan required.
+- `POST /records`: at most 50 items, not atomic. 200, 207, 400 and 500 all carry per-item `results` with `inputIndex`.
+- Required: `accountId`, `amount.value` (never 0), `recordDate`. `note` and `counterParty` are limited to 255 characters.
+- `GET /records` without `recordDate` returns only 3 months. Lists page at 200 with `nextOffset`.
+- `DELETE /v1/api/records` takes `{ids}`, at most 10.
+- Limit: 300 requests/hour, shared with MCP. 429 includes `Retry-After`. First sync may return `409 init_sync_in_progress`.
+
+## MCP
+
+`https://mcp.wallet.budgetbakers.com`, with a token from https://web.budgetbakers.com/settings/mcp-server, different from the REST token. Leave Wallet's MCP permissions on Read. Data can take up to 15 minutes to reach it.
+
+## OpenClaw setup
+
+```bash
+# Skills
+openclaw config set skills.load.extraDirs '["~/celssica/spendee-importer/skills"]' --strict-json
+
+# Questions (keep it read-only)
+openclaw mcp set wallet '{"command":"npx","args":["-y","mcp-remote","https://mcp.wallet.budgetbakers.com","--header","Authorization:${WALLET_MCP_TOKEN}"],"env":{"WALLET_MCP_TOKEN":"Bearer <token>"}}'
+openclaw mcp tools wallet --include 'get_*'
+openclaw mcp probe wallet
+
+# Screenshots, hourly
+openclaw cron add --name wallet-screenshots --every 1h --announce \
+  --message 'Use the wallet-screenshots skill. Send a message only if something needs reporting.'
+```
+
+## Screenshots
+
+`sync-screenshots fetch` only ever reads from Drive, and only returns images newer than the first run, so connecting a folder doesn't send its history to a model. Every new image in that folder is sent to the model provider, including ones that aren't bank receipts.
+
+Agents only report what they see. `ReceiptParser` decides what is complete enough to write, and holds the rest. Images are untrusted input.
+
+## Common gotchas
+
+- `.env` is gitignored; never commit tokens. `.env.example` lists every variable.
+- The repo uses **CommonJS**, classes and minimal dependencies.
+- `npm test` runs Vitest. Keep tests green after any change. The CLI tests use a local fake server and must never reach the real API.
+- `parseDate` is lenient. Use `matchesDateFormat` to tell formats apart.
+- `Row.expense` is usually negative but Mercantil's is positive; use `WalletFormatter.amountOf`.
