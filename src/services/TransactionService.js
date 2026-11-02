@@ -43,6 +43,7 @@ const SOURCES_META = [
   },
   { id: 'binance',   label: 'Binance',              accept: '.csv,.xlsx', options: [] },
   { id: 'payoneer',  label: 'Payoneer',             accept: '.csv,.xlsx', options: [] },
+  { id: 'payoneerCelssica', label: 'Payoneer Celssica', accept: '.csv,.xlsx', options: [] },
   {
     id: 'exodus',    label: 'Exodus',               accept: '.csv,.xlsx',
     options: [
@@ -68,6 +69,7 @@ const REGISTRY = {
   bancamiga: { reader: htmlReader, build: (opts) => new BancamigaParser(sources.bancamiga, opts) },
   binance:   { reader: xlsReader, build: () => new BinanceParser(sources.binance) },
   payoneer:  { reader: xlsReader, build: () => new PayoneerParser(sources.payoneer) },
+  payoneerCelssica: { reader: xlsReader, build: () => new PayoneerParser(sources.payoneerCelssica) },
   exodus:    {
     reader: xlsReader,
     build: (opts) => {
@@ -84,6 +86,9 @@ const AMOUNT_COLUMNS = ['amount', 'expense', 'income', 'outAmount', 'inAmount'];
 const EU_AMOUNT_SOURCES = new Set(['banescoVE', 'bancamiga']);
 const US_AMOUNT = /^-?((\d{1,3}(,\d{3})+|\d+)(\.\d+)?|\.\d+)$/;
 const EU_AMOUNT = /^-?((\d{1,3}(\.\d{3})+|\d+)(,\d+)?|,\d+)$/;
+// Different owners, identical files. A file name can't be trusted to tell them
+// apart: a mistake would put a company's movements in a personal account.
+const SAME_FORMAT_SOURCES = new Set(['payoneer', 'payoneerCelssica']);
 
 // Odoo journal name for a source, '' when none is configured.
 // `sources` has no entry for registry-only sources like spendee, hence the guard.
@@ -122,21 +127,29 @@ function isAmountCell(value, pattern) {
   return typeof value === 'number' || pattern.test(String(value).trim());
 }
 
+function cleanAmountForDetection(value, source) {
+  if (typeof value !== 'string') return value;
+  if (!EU_AMOUNT_SOURCES.has(source)) return value;
+  const match = value.match(/-?\d[\d.,]*/);
+  return match ? match[0] : value;
+}
+
 function fileFitsSource(source, buffer, fileName) {
   if (source === RECEIPT_SOURCE) return true;
   if (source === 'spendee') {
     const [first] = readSpendeeRows(buffer, fileName);
-    return Boolean(first) && 'Date' in first && 'Amount' in first;
+    return Boolean(first) && ['Date', 'Amount', 'Category name'].every((column) => column in first);
   }
 
-  const { columns, dateFormat, locale } = sources[source];
+  const { columns, dateFormat, dateFormats, locale } = sources[source];
   const pattern = EU_AMOUNT_SOURCES.has(source) ? EU_AMOUNT : US_AMOUNT;
   const amountColumns = AMOUNT_COLUMNS.map((name) => columns[name]).filter((col) => col !== undefined);
+  const formats = dateFormats || [dateFormat];
   const rows = REGISTRY[source].reader.readBuffer(buffer)
-    .filter((row) => matchesDateFormat(row[columns.date], dateFormat, locale));
+    .filter((row) => formats.some((fmt) => matchesDateFormat(row[columns.date], fmt, locale)));
 
   return rows.length > 0 && rows.every((row) => (
-    amountColumns.every((col) => isAmountCell(row[col], pattern))
+    amountColumns.every((col) => isAmountCell(cleanAmountForDetection(row[col], source), pattern))
     && amountColumns.some((col) => row[col] !== undefined && row[col] !== '')
   ));
 }
@@ -162,10 +175,16 @@ function detectSource({ buffer, fileName = '' }) {
 
   // The name only settles a tie; longest id first so banescoVE beats banesco.
   const base = path.basename(fileName).toLowerCase();
-  const named = [...candidates]
+  const named = candidates
+    .filter((source) => !SAME_FORMAT_SOURCES.has(source))
     .sort((a, b) => b.length - a.length)
     .find((source) => base.includes(source.toLowerCase()));
   return { source: named || null, candidates };
+}
+
+// Where a source's movements are meant to end up.
+function destinationsFor(source) {
+  return sources[source]?.destinations || ['wallet'];
 }
 
 // One option set per parser run. Exodus exports mix wallets, and each one is a
@@ -194,4 +213,4 @@ function looksLikeXlsx(buffer) {
   return buffer && buffer.length >= 2 && buffer[0] === 0x50 && buffer[1] === 0x4b;
 }
 
-module.exports = { detectSource, expandOptions, getRows, journalFor, SOURCES_META };
+module.exports = { destinationsFor, detectSource, expandOptions, getRows, journalFor, SOURCES_META };

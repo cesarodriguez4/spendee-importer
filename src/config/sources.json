@@ -1,5 +1,6 @@
 {
   "mercantil": {
+    "destinations": ["wallet"],
     "headerRows": 2,
     "dateFormat": "DD/MMM/YYYY",
     "locale": "es",
@@ -7,6 +8,7 @@
     "categoryFallback": "Sin Asignar"
   },
   "banesco": {
+    "destinations": ["wallet"],
     "headerRows": 8,
     "dateFormat": "DD/MM/YYYY",
     "locale": "es",
@@ -15,15 +17,18 @@
     "tagFallback": "Padres"
   },
   "banescoVE": {
+    "destinations": ["wallet"],
     "usdNote": true,
     "walletFrom": "2026-10-06",
     "headerRows": 1,
-    "dateFormat": "YYYY/MM/DD",
+    "dateFormat": "DD/MM/YYYY",
+    "dateFormats": ["DD/MM/YYYY", "YYYY/MM/DD"],
     "locale": "es",
     "columns": { "date": 0, "name": 2, "amount": 3 },
     "categoryFallback": "Sin Asignar"
   },
   "bancamiga": {
+    "destinations": ["odoo", "board"],
     "journal": "Bancamiga Banco Universal C.A.",
     "journalUSD": "Bancamiga Cash USD",
     "dateFormat": "DD/MM/YY",
@@ -34,6 +39,7 @@
     "textRepairs": [["Comisi�n", "Comision"], ["Cr�dito", "Credito"]]
   },
   "binance": {
+    "destinations": ["wallet"],
     "walletFrom": "2026-10-06",
     "headerRows": 1,
     "dateFormat": "YYYY-MM-DD HH:mm:ss",
@@ -49,6 +55,7 @@
     "categoryFallback": "Sin Asignar"
   },
   "payoneer": {
+    "destinations": ["wallet"],
     "walletFrom": "2026-10-07",
     "headerRows": 1,
     "dateFormat": "DD MMM, YYYY",
@@ -57,7 +64,17 @@
     "includeStatuses": ["Completed"],
     "categoryFallback": "Sin Asignar"
   },
+  "payoneerCelssica": {
+    "destinations": ["odoo", "board"],
+    "headerRows": 1,
+    "dateFormat": "DD MMM, YYYY",
+    "locale": "en",
+    "columns": { "date": 0, "name": 1, "amount": 2, "currency": 3, "status": 4 },
+    "includeStatuses": ["Completed"],
+    "categoryFallback": "Sin Asignar"
+  },
   "exodus": {
+    "destinations": ["wallet"],
     "dateFormat": "YYYY-MM-DD HH:mm:ss",
     "columns": {
       "date": 0,

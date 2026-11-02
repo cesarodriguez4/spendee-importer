@@ -6,10 +6,10 @@ const { WalletApiClient } = require('./WalletApiClient');
 const { WalletImporter } = require('./WalletImporter');
 
 const REPO_ROOT = path.join(__dirname, '..', '..');
-const ACCOUNTS_PATH = path.join(REPO_ROOT, 'wallet-accounts.json');
+const DEFAULT_ACCOUNTS_PATH = path.join(REPO_ROOT, 'wallet-accounts.json');
 
 // Account ids stay out of git: this repo is public.
-function loadWalletAccounts(filePath = ACCOUNTS_PATH) {
+function loadWalletAccounts(filePath = process.env.WALLET_ACCOUNTS_PATH || DEFAULT_ACCOUNTS_PATH) {
   if (!fs.existsSync(filePath)) return {};
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }

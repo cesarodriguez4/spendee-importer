@@ -9,9 +9,10 @@ Turns bank and wallet exports, and screenshots of bank receipts, into categorize
 | `mercantil` | Mercantil Bank (Panama) | `.xlsx`, `.xls` |
 | `banesco` | Banesco Panamá | `.xls`, `.xlsx` |
 | `banescoVE` | Banesco Venezuela | `.xls`, `.xlsx` |
-| `bancamiga` | Bancamiga Venezuela | `.xls`, `.xlsx`, `.html`, `.htm` |
+| `bancamiga` | Bancamiga Venezuela: Odoo and Board | `.xls`, `.xlsx`, `.html`, `.htm` |
 | `binance` | Binance exchange | `.csv`, `.xlsx` |
-| `payoneer` | Payoneer | `.csv`, `.xlsx` |
+| `payoneer` | Payoneer (personal) | `.csv`, `.xlsx` |
+| `payoneerCelssica` | Payoneer (Celssica): Odoo and Board | `.csv`, `.xlsx` |
 | `exodus` | Exodus wallet | `.csv`, `.xlsx` |
 | `spendee` | Spendee export | `.csv`, `.xlsx`, `.xls` |
 
@@ -41,7 +42,7 @@ The source is detected from the file's contents, and re-running a file doesn't c
 
 ```
 node scripts/import-to-wallet.js <file> [--source=<id>] [--apply] [--json]
-  [--account=<id>] [--accept=<tag,...>] [--category=<name>] [--output=<xlsx>] [--<source option>=<value>]
+  [--account=<id>] [--accept=<tag,...>] [--category=<name>] [--output=<xlsx>] [--odoo=<csv>] [--<source option>=<value>]
 ```
 
 - `--source`: skip detection.
@@ -51,7 +52,14 @@ node scripts/import-to-wallet.js <file> [--source=<id>] [--apply] [--json]
 - `--accept`: create rows held as possible duplicates, by tag.
 - `--category`: force every row to one category.
 - `--output`: write a flat spreadsheet to `exports/` instead of using the API.
+- `--odoo`: write the Odoo CSV to `exports/` instead of using the API.
 - Source options: `--exchangeRate`, `--startDate`, `--endDate`, `--wallet`.
+
+## Period control
+
+`npm run ui` opens a local page whose "Estado de cuentas" card shows how far each bank is loaded, how far behind it is, and possible gaps. It updates itself after each import. From the terminal: `node scripts/periods.js status`.
+
+The data is in `state/periods.json`, outside git because this repo is public, so back it up yourself. The server only listens on `127.0.0.1` unless you set `HOST`.
 
 ## Agents
 

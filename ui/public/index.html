@@ -11,6 +11,22 @@
     <p class="subtitle">Convierte exports de bancos/exchanges a XLSX importable en Wallet by BudgetBakers.</p>
 
     <section class="card">
+      <div class="preview-header">
+        <h2>Estado de cuentas</h2>
+      </div>
+      <p class="muted small">Hasta qué fecha hay extractos cargados en cada banco. Una captura registra un movimiento, no un período completo.</p>
+      <p id="periods-error" class="status error hidden"></p>
+      <div class="table-wrap">
+        <table id="periods">
+          <thead>
+            <tr><th>Banco</th><th>Al día hasta</th><th>Atraso</th><th>Última captura</th><th>Destino</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
       <div class="row">
         <label>
           Fuente

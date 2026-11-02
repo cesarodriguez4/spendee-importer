@@ -8,6 +8,7 @@ require('dotenv').config({ path: path.join(REPO_ROOT, '.env') });
 
 const { getRows } = require('../src/services/TransactionService');
 const { RECEIPT_SOURCE } = require('../src/parsers/ReceiptParser');
+const { PeriodLog } = require('../src/periods/PeriodLog');
 const { DriveScreenshotSource, LocalScreenshotSource } = require('../src/screenshots/ScreenshotSource');
 const { ScreenshotLedger } = require('../src/screenshots/ScreenshotLedger');
 const { STATUS } = require('../src/wallet');
@@ -80,6 +81,19 @@ function settle(ledger, ids, status, reason, applied, overdue) {
   }
 }
 
+function updatePeriodControl(items) {
+  try {
+    const log = new PeriodLog();
+    for (const item of items) {
+      if (item.status === STATUS.CREATED || item.status === STATUS.DUPLICATE) {
+        log.recordScreenshot({ source: item.row.walletSource, date: item.row.date });
+      }
+    }
+  } catch (err) {
+    console.error(`Could not update the period control: ${err.message}`);
+  }
+}
+
 async function recordScreenshots(argv) {
   const file = argv.find((arg) => !arg.startsWith('--'));
   if (!file) throw new Error(usage());
@@ -104,6 +118,7 @@ async function recordScreenshots(argv) {
   if (apply) {
     ledger.save();
     clearDownloads();
+    updatePeriodControl(result.items);
   }
 
   const report = {

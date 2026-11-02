@@ -22,6 +22,78 @@ async function init() {
   $('#process').addEventListener('click', onProcess);
   $('#download').addEventListener('click', onDownload);
   setupBatch();
+  loadPeriods();
+}
+
+// ---------- Estado de cuentas ----------
+
+const VIA_LABELS = {
+  wallet: 'Cargado en Wallet',
+  odoo: 'Exportado para Odoo',
+  board: 'Cargado en Board',
+  manual: 'Registrado a mano',
+};
+const DESTINATION_LABELS = { wallet: 'Wallet', odoo: 'Odoo', board: 'Board' };
+
+async function loadPeriods() {
+  const errorEl = $('#periods-error');
+  try {
+    const res = await fetch('/api/status');
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || 'Error leyendo el estado');
+    errorEl.classList.add('hidden');
+    renderPeriods(body.sources);
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.remove('hidden');
+  }
+}
+
+function renderPeriods(sources) {
+  const tbody = $('#periods tbody');
+  tbody.innerHTML = '';
+  sources.forEach((entry) => {
+    const tr = document.createElement('tr');
+    tr.appendChild(periodBankCell(entry));
+    tr.appendChild(td(entry.coveredThrough ?? 'Sin registro'));
+
+    const behind = td(entry.daysBehind === null ? '—' : `${entry.daysBehind} días`);
+    behind.classList.toggle('overdue', entry.overdue);
+    tr.appendChild(behind);
+
+    tr.appendChild(td(entry.lastScreenshot ?? '—'));
+    tr.appendChild(td(entry.destinations.map((d) => DESTINATION_LABELS[d] || d).join(' + ')));
+    tbody.appendChild(tr);
+  });
+}
+
+function periodBankCell(entry) {
+  const cell = document.createElement('td');
+  if (entry.periods.length === 0) {
+    cell.textContent = entry.label;
+    return cell;
+  }
+
+  const details = document.createElement('details');
+  const summary = document.createElement('summary');
+  summary.textContent = entry.gaps.length ? `${entry.label} ⚠` : entry.label;
+  details.appendChild(summary);
+
+  const list = document.createElement('ul');
+  [...entry.periods].reverse().forEach((period) => {
+    const item = document.createElement('li');
+    item.textContent = `${period.from} → ${period.to} · ${VIA_LABELS[period.via] || period.via}`;
+    list.appendChild(item);
+  });
+  entry.gaps.forEach((gap) => {
+    const item = document.createElement('li');
+    item.className = 'gap-warning';
+    item.textContent = `Posible hueco: ${gap.from} → ${gap.to} (${gap.days} días)`;
+    list.appendChild(item);
+  });
+  details.appendChild(list);
+  cell.appendChild(details);
+  return cell;
 }
 
 function currentFormat() {
@@ -186,8 +258,9 @@ async function onDownload() {
     for (let i = 0; i < chunks.length; i++) {
       const fileName = chunks.length === 1 ? baseName : suffixFileName(baseName, `_part${i + 1}of${chunks.length}`);
       setStatus(`Descargando ${i + 1}/${chunks.length}…`);
-      await downloadChunk(chunks[i], fileName);
+      await downloadChunk(chunks[i], fileName, currentFormat(), state.source.id);
     }
+    loadPeriods();
     setStatus(chunks.length > 1 ? `Listo: ${chunks.length} archivos (chunks de ${CHUNK_SIZE}).` : 'Listo.');
   } catch (err) {
     setStatus(err.message, true);
@@ -205,11 +278,11 @@ function suffixFileName(name, suffix) {
   return dot === -1 ? name + suffix : name.slice(0, dot) + suffix + name.slice(dot);
 }
 
-async function downloadChunk(rows, fileName) {
+async function downloadChunk(rows, fileName, format, source) {
   const res = await fetch('/api/export', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rows, fileName, format: currentFormat() }),
+    body: JSON.stringify({ rows, fileName, format, source }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -329,9 +402,10 @@ async function onBatchRun() {
       setBatchStatus(`Procesando ${job.source} (${done + 1}/${jobs.length})…`);
       const rows = await previewJob(job);
       const batchFileName = format === 'odoo' ? `${job.source}_odoo.csv` : `${job.source}_report.xlsx`;
-      await downloadChunk(rows, batchFileName, format);
+      await downloadChunk(rows, batchFileName, format, job.source);
       done += 1;
     }
+    loadPeriods();
     setBatchStatus(`Listo: ${done} archivo(s) descargado(s).`);
   } catch (err) {
     setBatchStatus(err.message, true);

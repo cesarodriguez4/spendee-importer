@@ -1,6 +1,6 @@
 ---
 name: wallet-importer
-description: Upload a bank or wallet export (Banesco, Banesco Venezuela, Mercantil, Bancamiga, Binance, Payoneer, Exodus, Spendee) to Wallet by Budget Bakers, or answer questions about the Wallet account. Use when the user hands over a statement file, asks to import or sync movements, or asks about their spending, balances or budgets.
+description: Upload a bank or wallet export (Banesco, Banesco Venezuela, Mercantil, Bancamiga, Binance, Payoneer, Exodus, Spendee) to Wallet by Budget Bakers or prepare it for Odoo, say which statements are due, or answer questions about the Wallet account. Use when the user hands over a statement file, asks to import or sync movements, asks what they need to download, or asks about their spending, balances or budgets.
 user-invocable: true
 metadata:
   { "openclaw": { "requires": { "bins": ["node"] } } }
@@ -20,20 +20,47 @@ node scripts/import-to-wallet.js "<file>" --apply --json
 
 The command identifies the source from the file's contents, skips what is already in Wallet and creates the rest. Pass the file as it is: do not edit it, convert it or write a parser for it.
 
-Then report from the JSON: the source, the date range, the totals per currency, and how many rows were created, skipped and held. List every row in `possible_duplicate`, `held`, `invalid`, `failed` or `unknown` with its reason. Tell the user to compare the date range and totals with their bank.
+Then report from the JSON: the source and its destination account, the date range, `coveredThrough` (up to date through), the totals per currency, and how many rows were created, skipped and held. List every row in `possible_duplicate`, `held`, `invalid`, `failed` or `unknown` with its reason. Tell the user to compare the date range and totals with their bank.
+
+Send the report to the Discord wallet channel configured in `.env` (`DISCORD_WALLET_CONVERSATION_REF`). If the variable is not set, report to the current conversation.
 
 ### Handling the result
 
 | Result | What to do |
 | --- | --- |
-| `status: source_ambiguous` | Nothing was written. Show `candidates` and ask which bank it is, then re-run with `--source=<id>`. If there are none, say the format isn't supported. |
+| `status: source_ambiguous` | Nothing was written. Show `candidates` and ask which bank it is, then re-run with `--source=<id>`. If there are none, say the format isn't supported. Payoneer reports always land here: `payoneer` is the personal account and `payoneerCelssica` the company, their files are identical, and only the user can tell. Don't guess from the file name. |
+| A source that isn't for Wallet (`bancamiga`, `payoneerCelssica`) | They go to Odoo and Board, never to personal Wallet. Follow "Company sources" below. |
 | `possible_duplicate` | Not created. Wallet has a similar movement, often the same one from a screenshot. Only if the user says it is different, re-run with `--accept=<tag,...>`. |
-| `invalid` with no mapped account | Add the account id to `wallet-accounts.json`, under the source and currency, after confirming it with the user. That file is gitignored; never put account ids in tracked files. |
+| `invalid` with no mapped account | Add the account id to `wallet-accounts.json`, under the source and currency, after confirming it with the user. Ask the question in the Discord wallet channel (`DISCORD_WALLET_CONVERSATION_REF`). That file is gitignored; never put account ids in tracked files. |
 | `rate_unavailable` | The BCV rate isn't published yet. Re-run later; the rest of the file is already in. |
 | Exit code 2 (`failed`, `unknown`, `not_attempted`) | Re-run the same command once. Rows that made it are recognized by their tag and skipped. If it fails again, report the error. |
 | Exit code 1 | Nothing was written. Report the error. |
 
 Source options exist as flags when the user asks for them: `--startDate`, `--endDate`, `--wallet` (Exodus), and `--exchangeRate` (Banesco Venezuela and Bancamiga, which converts the amounts to USD). Don't pass `--exchangeRate` for Banesco Venezuela unless asked: its amounts stay in Bs and the note shows USD at the BCV rate.
+
+## Company sources
+
+Bancamiga and Payoneer Celssica go to Odoo and Board:
+
+```bash
+node scripts/import-to-wallet.js "<file>" --source=<id> --odoo=<id>_odoo.csv --json
+```
+
+This writes the CSV to `exports/` and records the period. Give the user the path and say it still has to be imported into Odoo, since the period only means "exported". Board isn't configured yet, so say that too.
+
+## When the user asks what to download
+
+```bash
+node scripts/periods.js status --json
+```
+
+List each source's `coveredThrough`, `daysBehind` and any `gaps`, starting with those marked `overdue`. `lastScreenshot` is the latest movement seen in a screenshot and doesn't mean the period is complete, so a statement is still due. A gap is only possible: it can also be a stretch with no movements.
+
+The control updates itself after each import. Only if the user reports a mistake, or loaded something outside this repo:
+
+```bash
+node scripts/periods.js add --source=<id> --from=YYYY-MM-DD --to=YYYY-MM-DD --via=wallet|odoo|board|manual
+```
 
 ## When the user asks a question
 

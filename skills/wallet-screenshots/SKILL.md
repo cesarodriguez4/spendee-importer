@@ -48,6 +48,7 @@ Open each `path` and write one entry per screenshot to `tmp/receipts.json`, foll
 - Use `kind: "receipt"` only for one single payment or transfer from Banesco Venezuela (`banescoVE`) or Binance Pay (`binancePay`). Everything else is `other`: chats, balances, movement lists, other banks.
 - Include every screenshot you were given, so it isn't reviewed again.
 - Write only what is visible. If a field is hard to read, set it to `null`, and use `status: "unclear"` if the outcome isn't explicit. Never infer a value. The importer holds incomplete receipts for review, and that is the correct outcome.
+- If you are unsure about the object, category, counterparty, concept, or anything else about a screenshot, ask in the Discord wallet channel (`DISCORD_WALLET_CONVERSATION_REF`) before deciding. Do not guess; escalate the doubt to the channel and wait for an answer.
 - `date` is the date shown on the receipt, not the screenshot's. `amount` is positive: `direction` carries the sign. `65.000,00` is `65000`. Copy `reference` exactly.
 - A receipt received from someone else (shared in a chat, for example) isn't the owner's movement unless the screen shows it from the owner's account. If unsure, use `status: "unclear"`.
 
@@ -61,7 +62,9 @@ Don't change the result by editing `tmp/receipts.json` and retrying. If a receip
 
 ## 4. Report
 
-Send a message only if something happened, and keep it short. Include:
+Send a message only if something happened, and keep it short. Send it to the Discord wallet channel configured in `.env` (`DISCORD_WALLET_CONVERSATION_REF`). If the variable is not set, send it to the current conversation.
+
+Include:
 
 - What was created: amount, currency and counterparty.
 - Each `held`, `invalid`, `possible_duplicate` or `failed` item with its reason, since these need a person.

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { Row } = require('./Row');
 
 function escapeCsvCell(value) {
   const str = value == null ? '' : String(value);
@@ -21,11 +22,8 @@ class OdooCsvWriter {
   }
 
   write(fileName, rows) {
-    const csvText = OdooCsvWriter.buildCsv(rows);
-    const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
-    const buffer = Buffer.concat([bom, Buffer.from(csvText, 'utf8')]);
     const fullPath = path.join(this.outputDir, fileName);
-    fs.writeFileSync(fullPath, buffer);
+    fs.writeFileSync(fullPath, OdooCsvWriter.buildBuffer(rows));
     return fullPath;
   }
 
@@ -33,6 +31,19 @@ class OdooCsvWriter {
     return rows
       .map((row) => row.map(escapeCsvCell).join(','))
       .join('\n');
+  }
+
+  static buildBuffer(rows) {
+    const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
+    return Buffer.concat([bom, Buffer.from(OdooCsvWriter.buildCsv(rows), 'utf8')]);
+  }
+
+  // The file Odoo imports, from Rows or from the plain objects the browser sends.
+  static buildExport(rows) {
+    return OdooCsvWriter.buildBuffer([
+      Row.odooHeaders(),
+      ...rows.map((r) => Row.odooArrayFromPlain(r)),
+    ]);
   }
 }
 

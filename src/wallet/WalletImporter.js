@@ -127,6 +127,7 @@ class WalletImporter {
     // Movements before this date are already in Wallet in a form that neither a
     // tag nor the amount can match, so importing them would count them twice.
     if (sourceConfig.walletFrom && dayjs(row.date).format('YYYY-MM-DD') < sourceConfig.walletFrom) {
+      item.alreadyRecorded = true;
       return hold(item, STATUS.HELD, `Dated before ${sourceConfig.walletFrom}, already recorded in Wallet by earlier imports.`);
     }
 

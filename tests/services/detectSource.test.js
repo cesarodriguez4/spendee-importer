@@ -1,5 +1,5 @@
 const xlsx = require('node-xlsx');
-const { detectSource, expandOptions, getRows } = require('../../src/services/TransactionService');
+const { destinationsFor, detectSource, expandOptions, getRows } = require('../../src/services/TransactionService');
 const sources = require('../../src/config/sources.json');
 
 function sheet(rows) {
@@ -43,6 +43,26 @@ describe('detectSource', () => {
     ['bancamiga', bancamigaHtml, 'Movimientos_07102026.xls'],
   ])('recognises %s by content', (expected, build, fileName) => {
     expect(detectSource({ buffer: build(), fileName }).source).toBe(expected);
+  });
+
+  describe('Payoneer, personal and company', () => {
+    const report = () => Buffer.from([
+      'Date,Description,Amount,Currency,Status',
+      '"03 Sep, 2026",PAGO,-101.5,USD,Completed',
+    ].join('\n'));
+
+    it.each(['report_2026-10-07.csv', 'payoneer.csv', 'payoneerCelssica.csv'])('never settles %s by its name', (fileName) => {
+      expect(detectSource({ buffer: report(), fileName })).toEqual({
+        source: null,
+        candidates: ['payoneer', 'payoneerCelssica'],
+      });
+    });
+
+    it('sends the company one to Odoo and Board only', () => {
+      expect(destinationsFor('payoneerCelssica')).toEqual(['odoo', 'board']);
+      expect(destinationsFor('payoneer')).toEqual(['wallet']);
+      expect(destinationsFor('bancamiga')).toEqual(['odoo', 'board']);
+    });
   });
 
   it('does not let the name override the content', () => {

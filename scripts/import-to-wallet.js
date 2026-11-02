@@ -5,9 +5,11 @@ const path = require('path');
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const { detectSource, expandOptions, getRows, SOURCES_META } = require('../src/services/TransactionService');
+const { destinationsFor, detectSource, expandOptions, getRows, SOURCES_META } = require('../src/services/TransactionService');
 const { ExcelWriter } = require('../src/core/ExcelWriter');
+const { OdooCsvWriter } = require('../src/core/OdooCsvWriter');
 const { Row } = require('../src/core/Row');
+const { PeriodLog, coveredRange, rangeOf } = require('../src/periods/PeriodLog');
 const { STATUS } = require('../src/wallet');
 const { createImporter } = require('../src/wallet/createImporter');
 
@@ -16,14 +18,14 @@ const EXIT_USAGE = 1;
 const EXIT_PARTIAL = 2;
 
 const FLAGS = ['--apply', '--json', '--dry-run'];
-const VALUES = ['source', 'output', 'category', 'account', 'accept'];
+const VALUES = ['source', 'output', 'odoo', 'category', 'account', 'accept'];
 
 class UsageError extends Error {}
 
 function usage() {
   return [
     'Usage: node scripts/import-to-wallet.js <file> [--source=<id>] [--apply] [--json]',
-    '         [--account=<id>] [--accept=<tag,...>] [--category=<name>] [--output=<xlsx>] [--<option>=<value>]',
+    '         [--account=<id>] [--accept=<tag,...>] [--category=<name>] [--output=<xlsx>] [--odoo=<csv>] [--<option>=<value>]',
     `Sources: ${SOURCES_META.map((s) => s.id).join(', ')}`,
     'Without --apply nothing is written to Wallet.',
   ].join('\n');
@@ -52,6 +54,7 @@ function parseArgs(argv) {
     json: flags.includes('--json'),
     source: values.source || '',
     output: values.output || '',
+    odoo: values.odoo || '',
     category: values.category || '',
     account: values.account || '',
     accept: values.accept ? values.accept.split(',').map((tag) => tag.trim()) : [],
@@ -83,17 +86,40 @@ function readRows({ buffer, source, fileName, options }) {
   });
 }
 
+function exportsDir() {
+  const dir = path.join(__dirname, '..', 'exports');
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function writeOdooFile(rows, output) {
+  const outPath = path.join(exportsDir(), path.basename(output));
+  fs.writeFileSync(outPath, OdooCsvWriter.buildExport(rows));
+  return outPath;
+}
+
+// The movements are already out by the time this runs. A control file that can't
+// be saved is worth a warning, not a failed import.
+function recordPeriod({ source, range, via, fileName }) {
+  try {
+    const log = new PeriodLog();
+    if (range) log.recordPeriod({ source, ...range, via, file: fileName });
+    return { coveredThrough: log.coveredThrough(source) };
+  } catch (err) {
+    console.error(`Could not update the period control: ${err.message}`);
+    return { coveredThrough: null, periodWarning: err.message };
+  }
+}
+
 function writeSpreadsheet(rows, output) {
-  const exportsDir = path.join(__dirname, '..', 'exports');
-  fs.mkdirSync(exportsDir, { recursive: true });
   const data = [
     Row.headersWithPayeeCurrency(),
     ...rows.map((row) => [...new Row(row).toArray(), row.payee ?? '', row.currency ?? '']),
   ];
-  return new ExcelWriter(exportsDir).write(path.basename(output), data, 'Wallet Import');
+  return new ExcelWriter(exportsDir()).write(path.basename(output), data, 'Wallet Import');
 }
 
-function describe(result, apply) {
+function describe(result, apply, period) {
   const lines = [
     `${result.source}: ${result.summary.total} row(s), ${result.summary.from} to ${result.summary.to}`,
     `Totals: ${Object.entries(result.summary.totals).map(([currency, total]) => `${total} ${currency}`).join(', ') || 'none'}`,
@@ -107,16 +133,18 @@ function describe(result, apply) {
   if (result.summary.unmappedCategories?.length) {
     lines.push(`Categories not found in Wallet: ${result.summary.unmappedCategories.join(', ')}`);
   }
+  if (apply && period.coveredThrough) lines.push(`Up to date through ${period.coveredThrough}.`);
   if (!apply) lines.push('Nothing was written. Use --apply to create the new rows.');
   return lines.join('\n');
 }
 
-function toJson(result, applied) {
+function toJson(result, applied, period) {
   return {
     status: 'ok',
     applied,
     source: result.source,
     summary: result.summary,
+    ...period,
     items: result.items.map((item) => ({
       index: item.index,
       status: item.status,
@@ -142,6 +170,7 @@ function exitCodeFor(result) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  if (args.odoo && (args.apply || args.output)) throw new UsageError('--odoo cannot be combined with --apply or --output.');
 
   const fullPath = path.resolve(args.file);
   if (!fs.existsSync(fullPath)) throw new UsageError(`File not found: ${fullPath}`);
@@ -152,11 +181,24 @@ async function main() {
   const rows = readRows({ buffer, source, fileName, options: args.options });
   const forced = args.category ? rows.map((row) => ({ ...row, category: args.category })) : rows;
 
+  if (args.odoo) {
+    const outPath = writeOdooFile(forced, args.odoo);
+    const period = recordPeriod({ source, range: rangeOf(rows.map((row) => row.date)), via: 'odoo', fileName });
+    const report = { status: 'ok', applied: false, source, rows: rows.length, output: outPath, ...period };
+    console.log(args.json ? JSON.stringify(report, null, 2) : `Wrote ${rows.length} row(s) to ${outPath}`);
+    return EXIT_OK;
+  }
+
   if (args.output) {
     const outPath = writeSpreadsheet(forced, args.output);
     const report = { status: 'ok', applied: false, source, rows: rows.length, output: outPath };
     console.log(args.json ? JSON.stringify(report, null, 2) : `Wrote ${rows.length} row(s) to ${outPath}`);
     return EXIT_OK;
+  }
+
+  const destinations = destinationsFor(source);
+  if (!destinations.includes('wallet')) {
+    throw new UsageError(`"${source}" goes to ${destinations.join(' and ')}, not Wallet. Use --odoo=<csv>.`);
   }
 
   if (!process.env.WALLET_API_KEY) throw new UsageError('WALLET_API_KEY is not set. Use --output=<xlsx> for a file instead.');
@@ -170,8 +212,11 @@ async function main() {
     accept: args.accept,
   });
   const result = args.apply ? await importer.execute(plan) : plan;
+  const period = args.apply
+    ? recordPeriod({ source, range: coveredRange(result.items), via: 'wallet', fileName })
+    : {};
 
-  console.log(args.json ? JSON.stringify(toJson(result, args.apply), null, 2) : describe(result, args.apply));
+  console.log(args.json ? JSON.stringify(toJson(result, args.apply, period), null, 2) : describe(result, args.apply, period));
   return exitCodeFor(result);
 }
 

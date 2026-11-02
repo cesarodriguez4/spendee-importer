@@ -1,4 +1,7 @@
 const path = require('path');
+
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
 const express = require('express');
 const multer = require('multer');
 
@@ -6,6 +9,8 @@ const { getRows, SOURCES_META } = require('../src/services/TransactionService');
 const { ExcelWriter } = require('../src/core/ExcelWriter');
 const { OdooCsvWriter } = require('../src/core/OdooCsvWriter');
 const { Row } = require('../src/core/Row');
+const { PeriodLog, rangeOf } = require('../src/periods/PeriodLog');
+const { trackedSources } = require('../src/periods/trackedSources');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -16,6 +21,26 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/api/sources', (req, res) => {
   res.json(SOURCES_META);
 });
+
+app.get('/api/status', (req, res) => {
+  try {
+    res.json({ sources: new PeriodLog().status({ sources: trackedSources() }) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// A failed control update must never cost the user their download.
+function recordOdooExport(source, rows, fileName) {
+  if (!SOURCES_META.some((meta) => meta.id === source)) return;
+  try {
+    const range = rangeOf(rows.map((row) => row.date));
+    if (range) new PeriodLog().recordPeriod({ source, ...range, via: 'odoo', file: fileName });
+  } catch (err) {
+    console.error(`Could not update the period control: ${err.message}`);
+  }
+}
 
 app.post('/api/preview', upload.single('file'), (req, res) => {
   try {
@@ -32,17 +57,12 @@ app.post('/api/preview', upload.single('file'), (req, res) => {
 
 app.post('/api/export', (req, res) => {
   try {
-    const { rows, fileName = 'report.xlsx', format } = req.body;
+    const { rows, fileName = 'report.xlsx', format, source } = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'rows must be an array' });
 
     if (format === 'odoo') {
-      const data = [
-        Row.odooHeaders(),
-        ...rows.map((r) => Row.odooArrayFromPlain(r)),
-      ];
-      const buffer = OdooCsvWriter.buildCsv(data);
-      const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
-      const fullBuffer = Buffer.concat([bom, Buffer.from(buffer, 'utf8')]);
+      const fullBuffer = OdooCsvWriter.buildExport(rows);
+      recordOdooExport(source, rows, fileName);
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.send(fullBuffer);
@@ -74,7 +94,13 @@ app.post('/api/export', (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`UI server running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  // Local only by default: the status card shows financial data. Set HOST to widen.
+  const PORT = process.env.PORT || 3000;
+  const HOST = process.env.HOST || '127.0.0.1';
+  app.listen(PORT, HOST, () => {
+    console.log(`UI server running at http://${HOST}:${PORT}`);
+  });
+}
+
+module.exports = { app };
