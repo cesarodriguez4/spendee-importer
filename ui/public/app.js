@@ -55,10 +55,18 @@ function renderPeriods(sources) {
   sources.forEach((entry) => {
     const tr = document.createElement('tr');
     tr.appendChild(periodBankCell(entry));
-    tr.appendChild(td(entry.coveredThrough ?? 'Sin registro'));
+    // With more than one destination each one is behind on its own, so say which.
+    const states = Object.entries(entry.byDestination || {});
+    const perDestination = states.length > 1;
+    const lines = perDestination ? states : [[null, entry]];
+    const prefix = (dest) => (dest ? `${DESTINATION_LABELS[dest] || dest}: ` : '');
 
-    const behind = td(entry.daysBehind === null ? '—' : `${entry.daysBehind} días`);
+    tr.appendChild(td(lines.map(([dest, state]) => `${prefix(dest)}${state.coveredThrough ?? 'Sin registro'}`).join('\n')));
+
+    const behind = td(lines.map(([dest, state]) => `${prefix(dest)}${state.daysBehind === null ? '—' : `${state.daysBehind} días`}`).join('\n'));
     behind.classList.toggle('overdue', entry.overdue);
+    behind.classList.toggle('per-destination', perDestination);
+    tr.lastChild.classList.toggle('per-destination', perDestination);
     tr.appendChild(behind);
 
     tr.appendChild(td(entry.lastScreenshot ?? '—'));
@@ -88,7 +96,8 @@ function periodBankCell(entry) {
   entry.gaps.forEach((gap) => {
     const item = document.createElement('li');
     item.className = 'gap-warning';
-    item.textContent = `Posible hueco: ${gap.from} → ${gap.to} (${gap.days} días)`;
+    const where = gap.destination ? ` en ${DESTINATION_LABELS[gap.destination] || gap.destination}` : '';
+    item.textContent = `Posible hueco${where}: ${gap.from} → ${gap.to} (${gap.days} días)`;
     list.appendChild(item);
   });
   details.appendChild(list);

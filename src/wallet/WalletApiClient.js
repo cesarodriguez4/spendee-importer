@@ -1,5 +1,6 @@
 /**
- * HTTP client for Wallet by Budget Bakers REST API.
+ * HTTP client for the Budget Bakers REST API. Wallet and Board share it; only
+ * the base URL and the token differ.
  *
  * Docs: https://rest.budgetbakers.com/wallet/reference
  * Spec: https://rest.budgetbakers.com/wallet/openapi
@@ -36,12 +37,14 @@ class WalletApiClient {
    * @param {number} [opts.timeout=30000]
    * @param {Function} [opts.fetch=globalThis.fetch]
    * @param {Function} [opts.sleep] waits between rate-limit retries
+   * @param {string} [opts.label='Wallet'] names the destination in errors
    */
   constructor(opts = {}) {
     this.baseUrl = (opts.baseUrl || 'https://rest.budgetbakers.com/wallet')
       .replace(/\/+$/, '')
       .replace(/\/v1\/api$/, '');
     this.apiKey = opts.apiKey || '';
+    this.label = opts.label || 'Wallet';
     this.timeout = opts.timeout || 30000;
     this.fetch = opts.fetch || globalThis.fetch;
     this.sleep = opts.sleep || ((ms) => new Promise((resolve) => { setTimeout(resolve, ms); }));
@@ -56,7 +59,7 @@ class WalletApiClient {
    */
   async request(path, options = {}) {
     if (!this.apiKey) {
-      throw new Error('Wallet API key is required. Set WALLET_API_KEY env var.');
+      throw new Error(`${this.label} API key is required.`);
     }
 
     const { batch, ...fetchOptions } = options;
@@ -204,7 +207,7 @@ class WalletApiClient {
       return { response, text: await response.text() };
     } catch (err) {
       const reason = err.name === 'AbortError' ? `timed out after ${this.timeout}ms` : err.message;
-      throw new WalletUnknownResultError(`Wallet API request got no response: ${reason}`);
+      throw new WalletUnknownResultError(`${this.label} API request got no response: ${reason}`);
     } finally {
       clearTimeout(timer);
     }
@@ -224,7 +227,7 @@ class WalletApiClient {
 
     if (response.ok) {
       if (unreadable) {
-        throw new WalletUnknownResultError(`Wallet API returned an unreadable ${response.status} response`);
+        throw new WalletUnknownResultError(`${this.label} API returned an unreadable ${response.status} response`);
       }
       return body;
     }
@@ -232,7 +235,7 @@ class WalletApiClient {
     if (batch && Array.isArray(body?.results)) return body;
 
     const message = body?.message || body?.error || (unreadable && text) || response.statusText;
-    throw new WalletApiError(`Wallet API error ${response.status}: ${message}`, {
+    throw new WalletApiError(`${this.label} API error ${response.status}: ${message}`, {
       status: response.status,
       code: body?.error || body?.code,
       body,

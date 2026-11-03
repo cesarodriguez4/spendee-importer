@@ -31,6 +31,15 @@ describe('WalletApiClient', () => {
     await expect(client.getAccounts()).rejects.toThrow(/API key is required/);
   });
 
+  it('names its destination in errors', async () => {
+    const client = new WalletApiClient({
+      apiKey: 'secret',
+      label: 'Board',
+      fetch: makeMockFetch({ ok: false, status: 401, body: { message: 'bad token' } }),
+    });
+    await expect(client.getAccounts()).rejects.toThrow('Board API error 401: bad token');
+  });
+
   it('sends an Authorization header', async () => {
     const fetchMock = makeMockFetch({ accounts: [] });
     const client = new WalletApiClient({ apiKey: 'secret', fetch: fetchMock });

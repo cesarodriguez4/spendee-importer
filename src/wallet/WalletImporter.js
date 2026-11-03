@@ -20,7 +20,7 @@ const STATUS = Object.freeze({
 });
 
 /**
- * Decides what each parsed row should do in Wallet, then writes only the new ones.
+ * Decides what each parsed row should do in Wallet or Board, then writes only the new ones.
  * plan() never writes, so re-running a file after any failure is safe.
  */
 class WalletImporter {
@@ -29,9 +29,11 @@ class WalletImporter {
    * @param {import('./WalletApiClient').WalletApiClient} opts.client
    * @param {Object} opts.sources per-source config from sources.json
    * @param {{getRate: Function}} [opts.bcvRate] needed by sources with `usdNote`
+   * @param {string} [opts.label='Wallet'] names the destination in messages
    */
-  constructor({ client, sources = {}, bcvRate = null }) {
+  constructor({ client, sources = {}, bcvRate = null, label = 'Wallet' }) {
     this.client = client;
+    this.label = label;
     this.sources = sources;
     this.bcvRate = bcvRate;
   }
@@ -53,7 +55,7 @@ class WalletImporter {
 
     const categoryMap = WalletFormatter.buildCategoryMap(categories);
     if (forceCategory && !categoryMap[forceCategory.toLowerCase()]) {
-      throw new Error(`Category "${forceCategory}" does not exist in Wallet.`);
+      throw new Error(`Category "${forceCategory}" does not exist in ${this.label}.`);
     }
 
     const accountsById = new Map(accounts.map((account) => [account.id, account]));
@@ -96,7 +98,7 @@ class WalletImporter {
       const batch = pending.slice(start, start + BATCH_SIZE);
       try {
         const response = await this.client.createRecords(batch.map((item) => item.payload));
-        applyResults(batch, response);
+        applyResults(batch, response, this.label);
       } catch (err) {
         const status = err instanceof WalletUnknownResultError ? STATUS.UNKNOWN : STATUS.FAILED;
         for (const item of batch) {
@@ -128,16 +130,16 @@ class WalletImporter {
     // tag nor the amount can match, so importing them would count them twice.
     if (sourceConfig.walletFrom && dayjs(row.date).format('YYYY-MM-DD') < sourceConfig.walletFrom) {
       item.alreadyRecorded = true;
-      return hold(item, STATUS.HELD, `Dated before ${sourceConfig.walletFrom}, already recorded in Wallet by earlier imports.`);
+      return hold(item, STATUS.HELD, `Dated before ${sourceConfig.walletFrom}, already recorded in ${this.label} by earlier imports.`);
     }
 
     const targetId = accountId || sourceConfig.walletAccounts?.[row.currency];
     if (!targetId) {
-      return hold(item, STATUS.INVALID, `No Wallet account is mapped for ${source} in ${row.currency || 'an unknown currency'}.`);
+      return hold(item, STATUS.INVALID, `No ${this.label} account is mapped for ${source} in ${row.currency || 'an unknown currency'}.`);
     }
 
     const account = accountsById.get(targetId);
-    if (!account) return hold(item, STATUS.INVALID, `Wallet account ${targetId} does not exist.`);
+    if (!account) return hold(item, STATUS.INVALID, `${this.label} account ${targetId} does not exist.`);
     if (row.currency && account.currencyCode && account.currencyCode !== row.currency) {
       return hold(item, STATUS.INVALID, `Row is in ${row.currency} but "${account.name}" is in ${account.currencyCode}.`);
     }
@@ -233,13 +235,13 @@ function sameMovement(item, record) {
   return Math.abs(days) <= 1;
 }
 
-function applyResults(batch, response) {
+function applyResults(batch, response, label) {
   const results = response?.results || [];
   batch.forEach((item, position) => {
     const result = results.find((r) => r.inputIndex === position);
     if (!result) {
       item.status = STATUS.UNKNOWN;
-      item.reason = 'Wallet returned no result for this row.';
+      item.reason = `${label} returned no result for this row.`;
     } else if (result.success) {
       item.status = STATUS.CREATED;
       item.id = result.id;

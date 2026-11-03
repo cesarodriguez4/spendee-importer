@@ -29,6 +29,7 @@
   },
   "bancamiga": {
     "destinations": ["odoo", "board"],
+    "usdNote": true,
     "journal": "Bancamiga Banco Universal C.A.",
     "journalUSD": "Bancamiga Cash USD",
     "dateFormat": "DD/MM/YY",

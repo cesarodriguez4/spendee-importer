@@ -49,6 +49,50 @@ describe('PeriodLog', () => {
     expect(entry(log, 'banesco').periods).toHaveLength(2);
   });
 
+  it('is only as current as its most behind destination', () => {
+    const { log } = makeLog();
+    log.recordPeriod(period('2026-09-01', '2026-10-31', 'odoo', 'bancamiga'));
+    expect(entry(log, 'bancamiga')).toMatchObject({
+      coveredThrough: null,
+      daysBehind: null,
+      byDestination: {
+        odoo: { coveredThrough: '2026-10-31', daysBehind: 1 },
+        board: { coveredThrough: null, daysBehind: null },
+      },
+    });
+
+    log.recordPeriod(period('2026-09-01', '2026-10-15', 'board', 'bancamiga'));
+    expect(entry(log, 'bancamiga')).toMatchObject({ coveredThrough: '2026-10-15', daysBehind: 17 });
+  });
+
+  it('finds gaps per destination, not across them', () => {
+    const { log } = makeLog();
+    log.recordPeriod(period('2026-08-01', '2026-08-31', 'odoo', 'bancamiga'));
+    log.recordPeriod(period('2026-08-01', '2026-08-31', 'board', 'bancamiga'));
+    log.recordPeriod(period('2026-10-01', '2026-10-31', 'odoo', 'bancamiga'));
+    log.recordPeriod(period('2026-09-01', '2026-10-31', 'board', 'bancamiga'));
+    const { gaps, byDestination } = entry(log, 'bancamiga');
+    expect(byDestination.board.gaps).toEqual([]);
+    expect(gaps).toEqual([{ from: '2026-08-31', to: '2026-10-01', days: 31, destination: 'odoo' }]);
+  });
+
+  it('counts a manual correction for every destination', () => {
+    const { log } = makeLog();
+    log.recordPeriod(period('2026-09-01', '2026-10-20', 'manual', 'bancamiga'));
+    expect(entry(log, 'bancamiga').byDestination).toMatchObject({
+      odoo: { coveredThrough: '2026-10-20' },
+      board: { coveredThrough: '2026-10-20' },
+    });
+  });
+
+  it('reports coverage for one destination when asked', () => {
+    const { log } = makeLog();
+    log.recordPeriod(period('2026-09-01', '2026-10-31', 'odoo', 'bancamiga'));
+    log.recordPeriod(period('2026-09-01', '2026-10-15', 'board', 'bancamiga'));
+    expect(log.coveredThrough('bancamiga', 'board')).toBe('2026-10-15');
+    expect(log.coveredThrough('bancamiga')).toBe('2026-10-31');
+  });
+
   it('records nothing without a range', () => {
     const { file, log } = makeLog();
     expect(log.recordPeriod({ source: 'banesco', via: 'wallet' })).toBe(false);

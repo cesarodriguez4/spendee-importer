@@ -4,7 +4,7 @@ Start here if you are an agent working with this repository.
 
 ## What this repo does
 
-Turns bank and wallet exports, and screenshots of bank receipts, into categorized transactions and records them in Wallet by Budget Bakers. Everything an agent needs is in this repo; OpenClaw is the daily client, but nothing depends on it.
+Turns bank and wallet exports, and screenshots of bank receipts, into categorized transactions and records them in Wallet by Budget Bakers (personal) or Board, its business version (Celssica LLC). Everything an agent needs is in this repo; OpenClaw is the daily client, but nothing depends on it.
 
 ## What do you need to do?
 
@@ -13,7 +13,7 @@ Turns bank and wallet exports, and screenshots of bank receipts, into categorize
 | The user hands over a bank file | [skills/wallet-importer/SKILL.md](skills/wallet-importer/SKILL.md): `node scripts/import-to-wallet.js <file> --apply --json` |
 | Process phone screenshots | [skills/wallet-screenshots/SKILL.md](skills/wallet-screenshots/SKILL.md) |
 | Say which statements are due | `node scripts/periods.js status --json` |
-| Answer questions about the account | Read-only tools of the `wallet` MCP server (`.mcp.json`) |
+| Answer questions about the account | Read-only tools of the `wallet` MCP server, or `board` for Celssica LLC (`.mcp.json`) |
 | Change the code | Keep reading |
 
 **All writes go through `WalletImporter`.** It is the only thing preventing duplicates, so never write records through MCP or a direct API call.
@@ -23,13 +23,13 @@ Turns bank and wallet exports, and screenshots of bank receipts, into categorize
 - `src/core/` — shared building blocks (`Row`, `Categorizer`, `Report`, readers/writers).
 - `src/parsers/` — one parser per source/bank format. `ReceiptParser` takes what an agent read from screenshots.
 - `src/services/TransactionService.js` — source registry; `getRows` turns a file into `Row[]` and `detectSource` identifies a file by content.
-- `src/wallet/` — `WalletApiClient`, `WalletFormatter`, `WalletImporter` (plan and execute), `recordTag`, `BcvRate`.
+- `src/wallet/` — `WalletApiClient`, `WalletFormatter`, `WalletImporter` (plan and execute), `recordTag`, `BcvRate`. They serve Wallet and Board alike; `createImporter.js` holds `TARGETS`, the token, URL and account map of each.
 - `src/screenshots/` — Drive and local screenshot sources, and the reviewed-files ledger.
 - `src/periods/` — `PeriodLog`, the record of which periods are loaded per bank.
 - `scripts/import-to-wallet.js` — file import CLI.
 - `scripts/sync-screenshots.js` — screenshot run: `fetch`, then `record`.
 - `scripts/periods.js` — read or correct the period control.
-- `scripts/test-wallet-connection.js` — connectivity test.
+- `scripts/test-wallet-connection.js` — connectivity test (`--target=board` for Board).
 - `schemas/receipt.schema.json` — the contract for screenshot extraction.
 - `src/config/` — `sources.json`, `categories.json`, `tags.json`, `payees.json`.
 - `state/` (gitignored) — `screenshots-ledger.json` and `bcv-rates.json` are safe to lose, because note tags still stop duplicates. **`periods.json` isn't**: it has no copy in git and can't be rebuilt from the files.
@@ -41,7 +41,7 @@ Turns bank and wallet exports, and screenshots of bank receipts, into categorize
 | `mercantil` | Mercantil Panama | Excel | |
 | `banesco` | Banesco Panama | Excel | `Estados_de_cuenta_*.xls` |
 | `banescoVE` | Banesco Venezuela | Excel | In Bs, USD at BCV in the note. `--exchangeRate` converts instead (the UI and Odoo flow do). |
-| `bancamiga` | Bancamiga Venezuela | Excel or HTML | Odoo and Board, not Wallet. `Movimientos_*.xls` is really HTML. Optional `--exchangeRate`. |
+| `bancamiga` | Bancamiga Venezuela | Excel or HTML | Odoo and Board, not Wallet. `Movimientos_*.xls` is really HTML. In Bs, USD at BCV in the note; optional `--exchangeRate` converts. |
 | `binance` | Binance | CSV/Excel | USDT is recorded as USD |
 | `payoneer` | Payoneer (personal) | CSV/Excel | `report_*.csv`; currency per row |
 | `payoneerCelssica` | Payoneer (Celssica) | CSV/Excel | Odoo and Board, not Wallet. Same format as `payoneer`, so detection always asks. |
@@ -49,7 +49,7 @@ Turns bank and wallet exports, and screenshots of bank receipts, into categorize
 | `spendee` | Spendee export | CSV/Excel | |
 | `receipt` | Screenshot review | JSON | Produced by an agent, see the schema |
 
-`destinations` in `sources.json` says where a source's movements go. A source without `wallet` is refused by the Wallet path before any request. Board has no integration yet; it is only declared.
+`destinations` in `sources.json` says where a source's movements go. `--apply` writes to `wallet` or `board`, whichever the source declares (none declares both), and refuses a source with neither before any request. Odoo is a file, written with `--odoo`.
 
 To add a source, register it in `TransactionService.REGISTRY` and `SOURCES_META`, and add its amount columns to detection if they are new. Test detection against a real export: strict dates and amount formats are what tell banks apart.
 
@@ -73,12 +73,12 @@ Replaces the owner's old spreadsheet of "from X to Y | bank" lines. `PeriodLog` 
 
 | Event | What is recorded |
 | --- | --- |
-| `--apply` | A `wallet` period, unless a row is `failed`, `unknown` or `not_attempted` |
+| `--apply` | A `wallet` or `board` period, unless a row is `failed`, `unknown` or `not_attempted` |
 | `--odoo`, or an Odoo export in the UI | An `odoo` period, meaning exported, not imported into Odoo |
 | `sync-screenshots record --apply` | `lastScreenshot` for the source. It never moves `coveredThrough`, because one movement says nothing about the rest of the period. |
 | `scripts/periods.js add` | A correction |
 
-A file's range runs from its first to its last movement, not the bank's actual period. So gaps of up to 7 days between periods are ignored, and longer ones are only "possible". Overdue means 31 days or more behind. Use a temporary `PERIODS_PATH` in tests, and `WALLET_ACCOUNTS_PATH` to avoid depending on the real account map.
+A file's range runs from its first to its last movement, not the bank's actual period. So gaps of up to 7 days between periods are ignored, and longer ones are only "possible". Overdue means 31 days or more behind. Use a temporary `PERIODS_PATH` in tests, and `WALLET_ACCOUNTS_PATH` and `BOARD_ACCOUNTS_PATH` to avoid depending on the real account maps.
 
 ## How duplicates are prevented
 
@@ -92,7 +92,7 @@ Known gap: an older untagged record entered at a different rate has another amou
 
 ## Accounts and currency
 
-`wallet-accounts.json` (gitignored, see `wallet-accounts.example.json`) maps source and currency to a Wallet account id. **This repo is public**, so account ids, real bank references and other personal data never go in tracked files, tests included. An unmapped currency makes the row `invalid` rather than guessing an account. The API also rejects a `currencyCode` that differs from the account's, so Bs can't land in a USD account.
+`wallet-accounts.json` and `board-accounts.json` (gitignored, see the `.example.json` files) map source and currency to an account id. **This repo is public**, so account ids, real bank references and other personal data never go in tracked files, tests included. An unmapped currency makes the row `invalid` rather than guessing an account. The API also rejects a `currencyCode` that differs from the account's, so Bs can't land in a USD account.
 
 `walletFrom` on a source holds older movements that earlier imports already recorded in a form nothing can match: Banesco Venezuela in a USD account, Binance with its dates wrongly in 2020, Payoneer with different amounts.
 
@@ -109,9 +109,23 @@ Spec: https://rest.budgetbakers.com/wallet/openapi. Guide: https://rest.budgetba
 - `DELETE /v1/api/records` takes `{ids}`, at most 10.
 - Limit: 300 requests/hour, shared with MCP. 429 includes `Retry-After`. First sync may return `409 init_sync_in_progress`.
 
+## Board
+
+Board is the business version of Wallet, used for Celssica LLC. Its REST API is Wallet's (the reference covers both), with these differences:
+
+- Base URL `https://rest.budgetbakers.com/board` (`BOARD_API_URL`). Spec: https://rest.budgetbakers.com/board/openapi.
+- Its own token, from https://web-board.budgetbakers.com/settings/rest-api (`BOARD_API_KEY`). The API rejects Board tokens on the Wallet surface, and vice versa.
+- Records also take `contactId` and `orderId` (CRM). We don't send them.
+- Category cardinality is `revenue`, `funding`, `fixedCosts`, `variableCosts` or `assetsCosts`. Categories are separate from Wallet's, so the summary's `unmappedCategories` lists the ones missing in Board.
+- Same rate limit, shared with Board's MCP.
+
+The period control keeps coverage per destination: a company source is only up to date when both Odoo and Board are. A `manual` correction counts for all. Only destinations the source can reach are shown: Odoo always, Wallet and Board once they have an account mapped.
+
 ## MCP
 
 `https://mcp.wallet.budgetbakers.com`, with a token from https://web.budgetbakers.com/settings/mcp-server, different from the REST token. Leave Wallet's MCP permissions on Read. Data can take up to 15 minutes to reach it.
+
+Board: `https://mcp.board.budgetbakers.com` with `BOARD_MCP_TOKEN`, from Board's settings. Not yet confirmed against a real token. Keep it on Read too.
 
 ## OpenClaw setup
 
@@ -123,6 +137,9 @@ openclaw config set skills.load.extraDirs '["~/celssica/spendee-importer/skills"
 openclaw mcp set wallet '{"command":"npx","args":["-y","mcp-remote","https://mcp.wallet.budgetbakers.com","--header","Authorization:${WALLET_MCP_TOKEN}"],"env":{"WALLET_MCP_TOKEN":"Bearer <token>"}}'
 openclaw mcp tools wallet --include 'get_*'
 openclaw mcp probe wallet
+openclaw mcp set board '{"command":"npx","args":["-y","mcp-remote","https://mcp.board.budgetbakers.com","--header","Authorization:${BOARD_MCP_TOKEN}"],"env":{"BOARD_MCP_TOKEN":"Bearer <token>"}}'
+openclaw mcp tools board --include 'get_*'
+openclaw mcp probe board
 
 # Screenshots, hourly
 openclaw cron add --name wallet-screenshots --every 1h --announce \

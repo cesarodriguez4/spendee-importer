@@ -12,6 +12,8 @@ const GAP_DAYS = 7;
 
 const COUNTED_STATUSES = new Set(['created', 'duplicate', 'possible_duplicate']);
 const INCOMPLETE_STATUSES = new Set(['failed', 'unknown', 'not_attempted']);
+// A correction made by hand says nothing about where it went, so it counts for all.
+const ANY_DESTINATION = 'manual';
 
 function toDay(value) {
   const date = dayjs(value);
@@ -24,8 +26,8 @@ function rangeOf(dates) {
 }
 
 /**
- * The range a Wallet import can vouch for, or null when it can't vouch for any.
- * Rows held by `walletFrom` count: they are in Wallet already.
+ * The range a Wallet or Board import can vouch for, or null when it can't vouch
+ * for any. Rows held by `walletFrom` count: they are there already.
  */
 function coveredRange(items) {
   if (items.some((item) => INCOMPLETE_STATUSES.has(item.status))) return null;
@@ -80,8 +82,12 @@ class PeriodLog {
     return true;
   }
 
-  coveredThrough(source) {
-    return summarize(source, this.#load()).coveredThrough;
+  /**
+   * @param {string} source
+   * @param {string} [via] only the periods that reached this destination
+   */
+  coveredThrough(source, via) {
+    return summarize(source, this.#load(), via).coveredThrough;
   }
 
   /**
@@ -100,17 +106,32 @@ class PeriodLog {
 
     return [...ids]
       .map((id) => {
-        const summary = summarize(id, data);
-        const daysBehind = summary.coveredThrough
-          ? dayjs(today).startOf('day').diff(dayjs(summary.coveredThrough).startOf('day'), 'day')
-          : null;
+        const destinations = known.get(id)?.destinations || [];
+        const all = summarize(id, data);
+        const byDestination = Object.fromEntries(destinations.map((dest) => {
+          const { coveredThrough, gaps } = summarize(id, data, dest);
+          return [dest, { coveredThrough, gaps, ...behind(coveredThrough, today) }];
+        }));
+
+        // A source is only as current as its most behind destination.
+        const states = Object.values(byDestination);
+        const dates = states.map((state) => state.coveredThrough);
+        let coveredThrough = all.coveredThrough;
+        if (states.length) coveredThrough = dates.includes(null) ? null : dates.sort()[0];
+        const gaps = states.length
+          ? Object.entries(byDestination).flatMap(([dest, state]) => state.gaps.map((gap) => ({ ...gap, destination: dest })))
+          : all.gaps;
+
         return {
           source: id,
           label: known.get(id)?.label || id,
-          destinations: known.get(id)?.destinations || [],
-          ...summary,
-          daysBehind,
-          overdue: daysBehind !== null && daysBehind >= OVERDUE_DAYS,
+          destinations,
+          coveredThrough,
+          lastScreenshot: all.lastScreenshot,
+          gaps,
+          periods: all.periods,
+          byDestination,
+          ...behind(coveredThrough, today),
         };
       })
       .sort((a, b) => (b.daysBehind ?? Infinity) - (a.daysBehind ?? Infinity) || a.label.localeCompare(b.label));
@@ -146,9 +167,16 @@ class PeriodLog {
   }
 }
 
-function summarize(source, data) {
+function behind(coveredThrough, today) {
+  const daysBehind = coveredThrough
+    ? dayjs(today).startOf('day').diff(dayjs(coveredThrough).startOf('day'), 'day')
+    : null;
+  return { daysBehind, overdue: daysBehind !== null && daysBehind >= OVERDUE_DAYS };
+}
+
+function summarize(source, data, via) {
   const periods = data.periods
-    .filter((p) => p.source === source)
+    .filter((p) => p.source === source && (!via || p.via === via || p.via === ANY_DESTINATION))
     .sort((a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to));
 
   const gaps = [];

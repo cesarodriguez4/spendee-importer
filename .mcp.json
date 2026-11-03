@@ -9,6 +9,16 @@
         "--header",
         "Authorization: Bearer ${WALLET_MCP_TOKEN}"
       ]
+    },
+    "board": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.board.budgetbakers.com",
+        "--header",
+        "Authorization: Bearer ${BOARD_MCP_TOKEN}"
+      ]
     }
   }
 }

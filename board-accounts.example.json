@@ -1,0 +1,11 @@
+{
+  "bancamiga": {
+    "VES": "ACCOUNT_ID",
+    "USD": "ACCOUNT_ID"
+  },
+  "payoneerCelssica": {
+    "USD": "ACCOUNT_ID",
+    "EUR": "ACCOUNT_ID",
+    "GBP": "ACCOUNT_ID"
+  }
+}

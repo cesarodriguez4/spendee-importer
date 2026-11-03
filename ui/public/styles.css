@@ -183,3 +183,4 @@ td.income { color: var(--accent); }
 #periods summary { cursor: pointer; }
 td.overdue { color: var(--danger); font-weight: 600; }
 .gap-warning { color: var(--danger); }
+td.per-destination { white-space: pre-line; }

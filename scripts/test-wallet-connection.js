@@ -4,19 +4,23 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const { WalletApiClient } = require('../src/wallet');
+const { targetConfig } = require('../src/wallet/createImporter');
 
+// Usage: node scripts/test-wallet-connection.js [--target=wallet|board]
 async function main() {
-  const apiKey = process.env.WALLET_API_KEY;
-  const baseUrl = process.env.WALLET_API_URL;
+  const flag = process.argv.find((arg) => arg.startsWith('--target='));
+  const config = targetConfig(flag ? flag.slice('--target='.length) : 'wallet');
+  const apiKey = process.env[config.keyVar];
+  const baseUrl = process.env[config.urlVar] || config.defaultUrl;
 
   if (!apiKey) {
-    console.error('WALLET_API_KEY no está configurada.');
+    console.error(`${config.keyVar} no está configurada.`);
     process.exit(1);
   }
 
-  const client = new WalletApiClient({ apiKey, baseUrl });
+  const client = new WalletApiClient({ apiKey, baseUrl, label: config.label });
 
-  console.log('Probando conexión con Wallet API...');
+  console.log(`Probando conexión con ${config.label} API...`);
   console.log('URL base:', client.baseUrl);
 
   async function probe(label, url) {

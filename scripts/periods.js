@@ -34,7 +34,14 @@ function printStatus(argv) {
     const behind = entry.daysBehind === null ? 'no record' : `${entry.daysBehind} day(s) behind`;
     const flag = entry.overdue ? ' OVERDUE' : '';
     console.log(`${entry.label}: through ${entry.coveredThrough || '-'} (${behind})${flag}, last screenshot ${entry.lastScreenshot || '-'}`);
-    for (const gap of entry.gaps) console.log(`  possible gap: ${gap.from} to ${gap.to} (${gap.days} days)`);
+    const states = Object.entries(entry.byDestination || {});
+    if (states.length > 1) {
+      for (const [dest, state] of states) console.log(`  ${dest}: through ${state.coveredThrough || '-'}`);
+    }
+    for (const gap of entry.gaps) {
+      const where = gap.destination ? ` in ${gap.destination}` : '';
+      console.log(`  possible gap${where}: ${gap.from} to ${gap.to} (${gap.days} days)`);
+    }
   }
 }
 

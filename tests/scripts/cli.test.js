@@ -16,13 +16,16 @@ const ACCOUNT = { id: 'acc', name: 'Test', currencyCode: 'USD' };
 function run(script, args, env = {}) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [script, ...args], {
-      // WALLET_API_URL points at the fake server, so no test can reach the real API.
+      // The API URLs point at the fake server, so no test can reach the real API.
       env: {
         PATH: process.env.PATH,
         WALLET_API_KEY: '',
         WALLET_API_URL: 'http://127.0.0.1:9',
+        BOARD_API_KEY: '',
+        BOARD_API_URL: 'http://127.0.0.1:9',
         PERIODS_PATH: path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'periods-')), 'periods.json'),
         WALLET_ACCOUNTS_PATH: path.join(os.tmpdir(), 'no-such-wallet-accounts.json'),
+        BOARD_ACCOUNTS_PATH: path.join(os.tmpdir(), 'no-such-board-accounts.json'),
         ...env,
       },
       cwd: os.tmpdir(),
@@ -54,9 +57,11 @@ function banescoFile(name = 'movimientos.xlsx') {
 
 function startWallet({ existing = [], respond } = {}) {
   const posts = [];
+  const calls = [];
   let requests = 0;
   const server = http.createServer((req, res) => {
     requests += 1;
+    calls.push({ url: req.url, auth: req.headers.authorization });
     let body = '';
     req.on('data', (chunk) => { body += chunk; });
     req.on('end', () => {
@@ -84,8 +89,10 @@ function startWallet({ existing = [], respond } = {}) {
   return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => resolve({
       posts,
+      calls,
       requests: () => requests,
       env: { WALLET_API_KEY: 'test', WALLET_API_URL: `http://127.0.0.1:${server.address().port}/wallet` },
+      boardEnv: { BOARD_API_KEY: 'board-test', BOARD_API_URL: `http://127.0.0.1:${server.address().port}/board` },
       close: () => new Promise((done) => { server.close(done); }),
     }));
   });
@@ -245,13 +252,35 @@ describe('period control', () => {
     expect(fs.readFileSync(periodsPath, 'utf8')).toBe('not json');
   });
 
-  it('refuses to send a company source to Wallet without calling the API', async () => {
+  it('sends a company source to Board with the Board token and records a board period', async () => {
+    const { code, stdout } = await run(
+      IMPORT,
+      [payoneerFile(), '--source=payoneerCelssica', '--account=acc', '--apply', '--json'],
+      { ...env, ...wallet.boardEnv },
+    );
+    const report = JSON.parse(stdout);
+
+    expect(code).toBe(0);
+    expect(report.destination).toBe('board');
+    expect(wallet.posts).toHaveLength(1);
+    expect(wallet.calls.every((call) => call.url.startsWith('/board/') && call.auth === 'Bearer board-test')).toBe(true);
+    expect(periods()[0]).toMatchObject({ source: 'payoneerCelssica', via: 'board', from: '2026-09-03', to: '2026-09-03' });
+  });
+
+  it('refuses a company source without a Board key, and never falls back to Wallet', async () => {
     const { code, stderr } = await run(IMPORT, [payoneerFile(), '--source=payoneerCelssica', '--account=acc', '--apply'], env);
 
     expect(code).toBe(1);
-    expect(stderr).toMatch(/odoo/i);
-    expect(wallet.posts).toHaveLength(0);
+    expect(stderr).toMatch(/BOARD_API_KEY/);
     expect(wallet.requests()).toBe(0);
+  });
+
+  it('sends a personal source to Wallet even when a Board key is set', async () => {
+    const { code } = await run(IMPORT, [banescoFile(), '--account=acc', '--apply', '--json'], { ...env, ...wallet.boardEnv });
+
+    expect(code).toBe(0);
+    expect(wallet.calls.every((call) => call.url.startsWith('/wallet/') && call.auth === 'Bearer test')).toBe(true);
+    expect(periods()[0]).toMatchObject({ source: 'banesco', via: 'wallet' });
   });
 
   it('asks which Payoneer a report belongs to', async () => {
@@ -292,7 +321,7 @@ describe('period control', () => {
       const { stdout } = await run(PERIODS, ['status', '--json'], env);
       const entry = JSON.parse(stdout).sources.find((s) => s.source === 'bancamiga');
       expect(entry.coveredThrough).toBe('2026-10-07');
-      expect(entry.destinations).toEqual(['odoo', 'board']);
+      expect(entry.destinations).toEqual(['odoo']);
     });
 
     it.each([

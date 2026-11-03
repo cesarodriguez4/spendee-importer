@@ -8,4 +8,5 @@ tmp/
 data/
 state/
 wallet-accounts.json
+board-accounts.json
 .env

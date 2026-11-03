@@ -13,6 +13,7 @@ describe('UI server', () => {
   let base;
   let periodsPath;
   const previous = process.env.PERIODS_PATH;
+  const previousBoard = process.env.BOARD_ACCOUNTS_PATH;
 
   beforeAll(async () => {
     await new Promise((resolve) => { server = app.listen(0, '127.0.0.1', resolve); });
@@ -26,11 +27,15 @@ describe('UI server', () => {
   beforeEach(() => {
     periodsPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'periods-')), 'periods.json');
     process.env.PERIODS_PATH = periodsPath;
+    // No Board accounts, so the control can't depend on the real map.
+    process.env.BOARD_ACCOUNTS_PATH = path.join(os.tmpdir(), 'no-such-board-accounts.json');
   });
 
   afterEach(() => {
     if (previous === undefined) delete process.env.PERIODS_PATH;
     else process.env.PERIODS_PATH = previous;
+    if (previousBoard === undefined) delete process.env.BOARD_ACCOUNTS_PATH;
+    else process.env.BOARD_ACCOUNTS_PATH = previousBoard;
   });
 
   const exportRows = (body) => fetch(`${base}/api/export`, {
@@ -39,10 +44,10 @@ describe('UI server', () => {
     body: JSON.stringify({ rows: ROWS, fileName: 'x.csv', ...body }),
   });
 
-  it('lists the company sources even with no record', async () => {
+  it('lists the company sources even with no record, without a Board that has no accounts', async () => {
     const { sources } = await (await fetch(`${base}/api/status`)).json();
     const bancamiga = sources.find((s) => s.source === 'bancamiga');
-    expect(bancamiga).toMatchObject({ coveredThrough: null, destinations: ['odoo', 'board'] });
+    expect(bancamiga).toMatchObject({ coveredThrough: null, destinations: ['odoo'] });
     expect(sources.find((s) => s.source === 'payoneerCelssica')).toBeTruthy();
   });
 
